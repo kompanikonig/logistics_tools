@@ -74,33 +74,6 @@
 
 ---
 
-## Рабочий процесс (правка и деплой)
-
-```bash
-# внёс правки в index.html или standup.html
-git add .
-git commit -m "что изменил"
-git push            # GitHub Pages пересоберёт сайт автоматически (~1-2 мин)
-```
-
-> Перетаскивать файлы никуда не нужно — деплой идёт из ветки `main` сам.
-
-## Локальный просмотр
-
-```bash
-python3 -m http.server 8000
-# дашборд:  http://localhost:8000
-# стендап:  http://localhost:8000/standup.html
-```
-
-> Через `http://localhost`, а не двойным кликом по файлу: `file://` блокирует загрузку CSV (CORS).
-
-## Хостинг (справочно)
-
-GitHub Pages: Settings -> Pages -> Build and deployment -> Source: Deploy from a branch, Branch: `main` / `/ (root)`.
-
----
-
 ## Бэклог и планы
 
 - **Кросс-направленческая загрузка**: подтянуть данные соседних направлений из общего Smartsheet и видеть полную занятость ресурса по всем направлениям.
