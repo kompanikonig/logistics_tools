@@ -74,8 +74,10 @@ body.dark .wk-pct b{color:var(--accent)}
 .wk-day.cur{border-color:var(--accent);background:rgba(108,179,58,.08)}
 .wk-day.today .wk-dnum{color:var(--accent-d)}
 body.dark .wk-day.today .wk-dnum{color:var(--accent)}
-.wk-col{position:relative;width:100%;height:40px;background:var(--line);border-radius:6px;overflow:hidden}
-.wk-fill{position:absolute;left:0;right:0;bottom:0}
+.wk-col{position:relative;width:100%;height:6px;background:var(--line);border-radius:4px;overflow:hidden}
+.wk-col i{display:block;height:100%;background:var(--done);border-radius:4px}
+.wk-cnt{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--txt2)}
+.wk-cnt.empty{color:var(--txt3);font-weight:400}
 .wk-dlabel{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase}
 .wk-dnum{font-size:11px;font-weight:700;color:var(--txt2)}
 .wk-empty{color:var(--txt3);font-size:12.5px}
@@ -620,7 +622,6 @@ function renderWeek(){
   const pct = total ? Math.round(done/total*100) : 0;
   const range = fmtDate(start) + ' – ' + fmtDate(addDays(start,6));
   const today = isoToday();
-  const maxT = Math.max(1, ...per.map(d=>d.total));
 
   const seg=(c,col)=> c>0 ? `<i style="width:${c/total*100}%;background:${col}"></i>` : '';
   const barHTML = total
@@ -628,17 +629,14 @@ function renderWeek(){
     : '';
 
   const stripHTML = per.map(d=>{
-    const fillH = d.total ? Math.max(8, Math.round(d.total/maxT*100)) : 0; // высота заливки ∝ числу задач
-    const doneH = d.total ? Math.round(d.done/d.total*fillH) : 0;          // зелёная часть (доля выполненного)
+    const donePct = d.total ? Math.round(d.done/d.total*100) : 0;
     const cls = (d.iso===cur?' cur':'') + (d.iso===today?' today':'');
-    const col = `<div class="wk-col">
-        <div class="wk-fill" style="height:${fillH}%;background:var(--wip)"></div>
-        <div class="wk-fill" style="height:${doneH}%;background:var(--done)"></div>
-      </div>`;
+    const cnt = d.total ? `<div class="wk-cnt">${d.done}/${d.total}</div>` : `<div class="wk-cnt empty">—</div>`;
     return `<div class="wk-day${cls}" data-day="${d.iso}" title="${fmtDate(d.iso)}: ${d.done}/${d.total}">
       <div class="wk-dlabel">${dowShort(d.iso)}</div>
-      ${col}
       <div class="wk-dnum">${d.iso.split('-')[2]}</div>
+      <div class="wk-col"><i style="width:${donePct}%"></i></div>
+      ${cnt}
     </div>`;
   }).join('');
 
@@ -655,7 +653,7 @@ function renderWeek(){
         <span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--fail)"></i> ${fail} не сделано</span>
         <span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--moved)"></i> ${moved} перенесено</span>
       </div>` : `<div class="wk-empty">На этой неделе у вас пока нет задач.</div>`}
-    <div class="wk-strip">${stripHTML}</div>`;
+    <div class="wk-strip" style="grid-template-columns:repeat(${per.length||1},1fr)">${stripHTML}</div>`;
 
   el.querySelectorAll('.wk-day').forEach(d=>{
     d.onclick=()=>{ cur=d.dataset.day; renderAll(); };
