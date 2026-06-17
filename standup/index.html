@@ -457,10 +457,17 @@ function wireCards(iso){
     };
   });
 }
+function dayHasContent(iso){
+  const day = cache[iso]; if(!day || !day.people) return false;
+  return PEOPLE.some(n=>{
+    const p = day.people[n] || {};
+    return (p.tasks && p.tasks.length) || (p.status && p.status !== 'work');
+  });
+}
 function renderArchive(){
-  const days = Object.keys(cache).filter(d=>d!==cur).sort().reverse();
+  const days = Object.keys(cache).filter(d=>d!==cur && dayHasContent(d)).sort().reverse();
   const el = document.getElementById('archive');
-  if(!days.length){ el.innerHTML='<div class="empty">Архив пуст — прошлые дни появятся здесь автоматически.</div>'; return; }
+  if(!days.length){ el.innerHTML='<div class="empty">Архив пуст — прошлые дни с задачами появятся здесь автоматически.</div>'; return; }
   el.innerHTML = days.map(iso=>{
     const day=dayOf(iso); const {done,total}=statusCounts(day);
     const fail=(()=>{let f=0;PEOPLE.forEach(n=>day.people[n].tasks.forEach(t=>{if(t.st==='fail')f++;}));return f;})();
