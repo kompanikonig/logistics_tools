@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Логистика 2026 · Панель планирования</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef2f7; --bg2:#e9eef6; --panel:#ffffff; --panel2:#f4f7fb;
+  --line:#e7ecf3; --line2:#d7dfeb;
+  --txt:#1d2735; --txt2:#5c6878; --txt3:#9aa6b6;
+  --accent:#7ac143; --accent-d:#4e8f1f; --accent2:#00a3e0;
+  --c-low:#74c7ef; --c-mid:#a7d96b; --c-full:#6cb33a; --c-high:#ffb81c; --c-over:#ef4444; --c-zero:#aeb9c9;
+  --shadow:0 10px 30px rgba(29,52,84,.10);
+  --mono:'JetBrains Mono',monospace; --disp:'Nunito',sans-serif; --body:'Nunito',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:var(--body);-webkit-font-smoothing:antialiased}
+body{background:
+  radial-gradient(1100px 520px at 90% -12%, rgba(0,163,224,.10), transparent 60%),
+  radial-gradient(900px 480px at -5% 108%, rgba(122,193,67,.12), transparent 55%),
+  var(--bg);
+  min-height:100vh;padding:0 0 60px}
+.wrap{max-width:1340px;margin:0 auto;padding:0 24px}
+a{color:inherit}
+::selection{background:var(--accent);color:#fff}
+
+/* header */
+header{padding:30px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px;position:relative;overflow:hidden}
+.brandrow{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.brand h1{font-family:var(--disp);font-weight:900;font-size:31px;letter-spacing:-.5px;line-height:1.05;
+  background:linear-gradient(92deg,#243042 25%,var(--accent-d) 120%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .sub{color:var(--txt2);font-size:13.5px;margin-top:8px;letter-spacing:.2px}
+.brand .tag{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--accent);
+  border:1px solid var(--line2);padding:3px 9px;border-radius:20px;margin-bottom:12px;letter-spacing:1px}
+.updated{font-family:var(--mono);font-size:11.5px;color:var(--txt3);text-align:right}
+
+/* data bar */
+.databar{display:flex;align-items:center;gap:12px;margin:16px 0 0;flex-wrap:wrap}
+.refresh{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--accent-d);background:#fff;border:1px solid var(--line2);border-radius:9px;padding:7px 13px;cursor:pointer;transition:.15s}
+.refresh:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(122,193,67,.18)}
+.refresh:disabled{opacity:.6;cursor:default}
+.dstatus{font-family:var(--mono);font-size:11.5px;color:var(--txt2);display:inline-flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.dot.live{background:var(--c-full)} .dot.off{background:var(--txt3)} .dot.load{background:var(--c-high);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* quarter pills */
+.qbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:22px 0 6px}
+.qlabel{font-family:var(--mono);font-size:11px;color:var(--txt3);letter-spacing:1.5px;text-transform:uppercase;margin-right:4px}
+.qpills{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
+.qpill{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--txt2);background:transparent;border:none;
+  padding:8px 16px;border-radius:8px;cursor:pointer;transition:.18s;letter-spacing:.5px}
+.qpill:hover{color:var(--txt)}
+.qpill.on{background:linear-gradient(180deg,#8ace52,#6cb02f);color:#143a05;font-weight:800;box-shadow:0 4px 14px rgba(122,193,67,.40)}
+
+/* tabs */
+.tabs{display:flex;gap:2px;margin:20px 0 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{font-size:14px;font-weight:600;color:var(--txt2);background:none;border:none;padding:13px 20px;cursor:pointer;
+  border-bottom:2px solid transparent;transition:.18s;position:relative;top:1px}
+.tab:hover{color:var(--txt)}
+.tab.on{color:var(--txt);border-bottom-color:var(--accent)}
+
+/* filters */
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+.fld{display:flex;flex-direction:column;gap:5px}
+.fld label{font-family:var(--mono);font-size:10px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase}
+select,input[type=text]{background:var(--panel);color:var(--txt);border:1px solid var(--line2);border-radius:9px;
+  padding:9px 12px;font-family:var(--body);font-size:13.5px;outline:none;transition:.15s;min-width:180px}
+select:focus,input:focus{border-color:var(--accent)}
+input[type=text]{min-width:220px}
+.chipclear{align-self:flex-end;background:var(--panel2);border:1px solid var(--line2);color:var(--txt2);font-size:12px;
+  padding:9px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+.chipclear:hover{border-color:var(--c-over);color:#d92d2d}
+
+/* multi-select (checkbox dropdown) */
+.msel{position:relative;min-width:200px}
+.msel-btn{width:100%;text-align:left;background:var(--panel);color:var(--txt);border:1px solid var(--line2);border-radius:9px;
+  padding:9px 30px 9px 12px;font-family:var(--body);font-size:13.5px;cursor:pointer;transition:.15s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
+.msel-btn:after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--txt3);font-size:11px}
+.msel-btn.has{border-color:var(--accent);color:var(--accent-d);font-weight:600}
+.msel.open .msel-btn{border-color:var(--accent)}
+.msel-panel{position:absolute;z-index:50;top:calc(100% + 5px);left:0;min-width:100%;white-space:nowrap;
+  background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 14px 34px rgba(20,40,70,.18);
+  padding:6px;max-height:300px;overflow:auto;display:none}
+.msel.open .msel-panel{display:block}
+.msel-opt{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--txt)}
+.msel-opt:hover{background:var(--bg2)}
+.msel-opt input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;flex:none}
+.msel-all{font-weight:600;color:var(--txt2);border-bottom:1px solid var(--line);border-radius:0;margin-bottom:4px;padding-bottom:9px}
+.msel-all:hover{color:var(--c-over)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);
+  padding:18px 18px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.kpi.warn::before{background:var(--c-high)} .kpi.bad::before{background:var(--c-over)} .kpi.good::before{background:var(--c-full)}
+.kpi .v{font-family:var(--disp);font-weight:700;font-size:30px;line-height:1;letter-spacing:-1px}
+.kpi .l{font-size:11.5px;color:var(--txt2);margin-top:9px;line-height:1.35}
+.kpi .u{font-family:var(--mono);font-size:11px;color:var(--txt3);margin-top:3px}
+
+/* panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px 22px 24px;margin-bottom:22px}
+.panel h2{font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:-.2px;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.panel .ph{font-size:12.5px;color:var(--txt2);margin-bottom:18px}
+
+/* legend */
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--txt2);margin-bottom:16px}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* executor bars */
+.bars{display:flex;flex-direction:column;gap:2px}
+.barrow{display:grid;grid-template-columns:200px 1fr 70px;gap:14px;align-items:center;padding:7px 8px;border-radius:9px;cursor:pointer;transition:.13s}
+.barrow:hover{background:var(--panel2)}
+.barrow .nm{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:7px}
+.barrow .nm .car{font-family:var(--mono);color:var(--txt3);font-size:10px;transition:.2s}
+.barrow.open .nm .car{transform:rotate(90deg);color:var(--accent)}
+.track{position:relative;height:22px;background:var(--bg2);border-radius:7px;overflow:hidden;border:1px solid var(--line)}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px 0 0 6px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.cap{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--txt2);opacity:.55;z-index:3}
+.cap::after{content:'100%';position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--txt3);white-space:nowrap}
+.barrow .pct{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right}
+.detail{grid-column:1/-1;padding:4px 0 12px 16px;display:none}
+.barrow.open + .detail{display:block}
+.dtask{display:grid;grid-template-columns:1fr 120px 90px 100px;gap:12px;align-items:center;font-size:12px;padding:6px 12px;border-left:2px solid var(--line2);margin:3px 0;background:var(--bg2);border-radius:0 8px 8px 0}
+.dtask .dp{color:var(--txt);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtask .dc{font-family:var(--mono);font-size:10px;color:var(--accent2)}
+.dtask .dd{font-family:var(--mono);font-size:10.5px;color:var(--txt2)}
+.dtask .dl{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
+
+/* heatmap */
+.hm{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hmtbl{border-collapse:separate;border-spacing:3px;width:100%}
+.hmtbl th{font-family:var(--mono);font-size:11px;color:var(--txt2);font-weight:500;padding:6px 8px;text-align:center}
+.hmtbl th.rh{text-align:left;font-family:var(--body);font-size:13px;color:var(--txt);font-weight:500;min-width:180px;position:sticky;left:0;background:var(--panel);z-index:2}
+.hmname{font-weight:500;font-size:13px}
+.hmcomps{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.hmcomp{font-family:var(--mono);font-size:9px;color:var(--accent-d);background:rgba(122,193,67,.12);border:1px solid rgba(122,193,67,.22);padding:1px 5px;border-radius:5px;line-height:1.5}
+.qstrip{display:flex;gap:3px;margin-top:5px}
+.qstrip i{flex:1;height:5px;border-radius:3px;position:relative}
+.qstrip .ql{font-family:var(--mono);font-size:9px;color:var(--txt3);text-align:center;flex:1}
+.mcell{min-width:40px;font-size:10.5px;padding:8px 2px}
+.hmtbl th.mh{font-size:10px}
+.capmini{max-width:230px;margin-top:3px}
+.capmini .track{height:14px}
+.capmini .cap::after{display:none}
+.hmtbl td{text-align:center}
+.cell{border-radius:7px;padding:9px 4px;font-family:var(--mono);font-size:12px;font-weight:700;color:#04120f;min-width:64px}
+.cell.zero{color:var(--txt3);background:var(--bg2)!important}
+.cell.free{background:var(--c-zero)!important;color:var(--txt)!important;font-weight:700}
+.cell.dim{opacity:.2;filter:saturate(.35)}
+.zbtn{font-family:var(--mono);font-size:11px;color:var(--txt2);background:var(--panel2);border:1px solid var(--line2);border-radius:20px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+.zbtn:hover{color:var(--txt);border-color:var(--txt3)}
+.zbtn.on{background:#fff;border-color:var(--txt2);color:var(--txt);box-shadow:0 2px 8px rgba(29,52,84,.12);font-weight:700}
+.zbtn .sw{width:11px;height:11px;border-radius:3px}
+.zbtn.zclear{color:var(--c-over);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06)}
+.zbtn.zclear:hover{background:rgba(239,68,68,.12)}
+
+/* project cards */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px}
+.pcard{background:linear-gradient(165deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:18px;transition:.15s}
+.pcard:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.pcard .pt{font-size:15px;font-weight:600;line-height:1.25;margin-bottom:10px}
+.pcard .pmeta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.tagc{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--line2);color:var(--txt2)}
+.tagc.mgr{color:#0277b6;border-color:rgba(0,163,224,.35)}
+.tagc.comp{color:var(--accent-d);border-color:rgba(122,193,67,.3)}
+.pdates{font-family:var(--mono);font-size:11.5px;color:var(--txt2);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.status{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.status.plan{background:rgba(0,163,224,.15);color:#0277b6}
+.status.run{background:rgba(122,193,67,.18);color:var(--accent-d)}
+.status.soon{background:rgba(255,184,28,.16);color:#b9770a}
+.status.over{background:rgba(239,68,68,.16);color:#d92d2d}
+.status.done{background:rgba(120,135,160,.16);color:var(--txt2)}
+.prog{height:6px;background:var(--bg2);border-radius:4px;overflow:hidden;margin:10px 0 13px}
+.prog>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+.pteam{display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--line);padding-top:12px}
+.pteam .row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+.pteam .row .who{color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.pteam .row .ld{font-family:var(--mono);font-size:11.5px;display:flex;gap:5px}
+.minibar{width:50px;height:7px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.minibar>i{display:block;height:100%}
+.pfoot{display:flex;justify-content:space-between;margin-top:13px;padding-top:11px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--txt2)}
+.pfoot b{color:var(--txt);font-size:13px}
+
+/* gantt */
+/* merged plan table */
+.planwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;--leftw:480px}
+.plantbl{min-width:1000px}
+.planhdr{display:grid;grid-template-columns:var(--leftw) 1fr;align-items:end;border-bottom:1px solid var(--line2);margin-bottom:2px}
+.planhdr .hl{font-family:var(--mono);font-size:10px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;padding:0 12px 8px;position:sticky;left:0;background:var(--panel);z-index:3}
+.planhdr .gmlabels{display:grid;grid-template-columns:repeat(12,1fr);font-family:var(--mono);font-size:10.5px;color:var(--txt3);text-align:center}
+.planhdr .gmlabels span{padding-bottom:8px;border-left:1px solid var(--line)}
+.pgroup{border-bottom:1px solid var(--line)}
+.prow{display:grid;grid-template-columns:var(--leftw) 1fr;align-items:stretch;min-height:46px}
+.prow.head{cursor:pointer;transition:.12s}
+.prow.head:hover{background:var(--panel2)}
+.pleft{padding:8px 12px;display:flex;flex-direction:column;gap:6px;justify-content:center;min-width:0;position:sticky;left:0;background:var(--panel);z-index:2}
+.ptop{display:flex;align-items:center;gap:8px;min-width:0}
+.ptop .car{font-family:var(--mono);color:var(--txt3);font-size:10px;transition:.2s;flex:none}
+.pgroup.open .ptop .car{transform:rotate(90deg);color:var(--accent)}
+.ptop .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nmlink{cursor:pointer;border-bottom:1px dashed transparent}
+.nmlink:hover{color:var(--accent-d);border-bottom-color:var(--accent)}
+.pbot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--txt2)}
+.pbot .sep{color:var(--line2)}
+.loadpill{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;color:#04120f}
+.days{font-family:var(--mono);font-size:10px}
+.ptrack{position:relative;background-image:repeating-linear-gradient(90deg,transparent,transparent calc(8.333% - 1px),var(--line) calc(8.333% - 1px),var(--line) 8.333%)}
+.pbar{position:absolute;top:50%;transform:translateY(-50%);height:18px;border-radius:5px;display:flex;align-items:center;padding:0 7px;overflow:hidden;box-shadow:0 2px 7px rgba(29,52,84,.16)}
+.pbar.proj{height:20px}
+.pbar .pfill{position:absolute;left:0;top:0;bottom:0;border-radius:5px 0 0 5px;opacity:1}
+.pbar span{position:relative;font-family:var(--mono);font-size:9.5px;color:#04120f;font-weight:700;white-space:nowrap;z-index:2}
+.dl{position:absolute;top:50%;transform:translate(-50%,-50%) rotate(45deg);width:8px;height:8px;z-index:5;border:1px solid rgba(29,52,84,.20)}
+.ptoday{position:absolute;top:0;bottom:0;width:2px;background:var(--c-over);z-index:6;opacity:.7}
+/* executor monthly total-load strip */
+.mload{position:absolute;top:50%;transform:translateY(-50%);height:24px;box-sizing:border-box;
+  border:2px solid var(--panel);border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;font-weight:700;color:#06140f;z-index:2;overflow:hidden}
+.mload.z{background:var(--bg2);border-color:var(--panel)}
+.prow.head:hover .mload{border-color:var(--panel2)}
+body.dark .mload{color:#0c1410}
+.prow.sub .mload{height:18px;font-size:9px;border-color:#f5f8fc}
+body.dark .prow.sub .mload{border-color:#1b2530}
+.msec2{font-family:var(--mono);font-size:10.5px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin:14px 0 8px}
+.needrow{display:grid;grid-template-columns:minmax(200px,1.1fr) 2fr;gap:16px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.needname{font-size:13.5px;font-weight:600}
+.needsub{font-family:var(--mono);font-size:10.5px;color:var(--txt2);margin-top:3px}
+.needtrack{position:relative;height:30px}
+.planhz{display:flex;align-items:center;gap:10px;margin:6px 0 12px}
+.cablink{display:inline-flex;align-items:center;gap:2px;font-family:var(--mono);font-size:10.5px;font-weight:600;
+  color:var(--accent-d,#2d7a2d);background:rgba(108,179,58,.13);border:1px solid rgba(108,179,58,.3);
+  padding:1px 7px;border-radius:6px;text-decoration:none;white-space:nowrap;transition:.12s;margin-left:2px}
+.cablink:hover{background:rgba(108,179,58,.24);border-color:var(--accent)}
+body.dark .cablink{color:#9fd87f;background:rgba(108,179,58,.16)}
+.cell.clk{cursor:pointer}
+.cell.clk:hover{outline:2.5px solid rgba(20,40,70,.35);outline-offset:-2px}
+body.dark .cell.clk:hover{outline-color:rgba(255,255,255,.5)}
+.prow.sub{min-height:34px;background:rgba(29,52,84,.025)}
+.prow.sub .pleft{padding-left:30px;gap:3px;background:#f5f8fc}
+.prow.sub .nm{font-size:12.5px;font-weight:500;color:var(--txt)}
+.prow.sub .pbar{height:13px}
+.psub{display:none}
+.nobar{position:absolute;top:50%;left:8px;transform:translateY(-50%);font-family:var(--mono);font-size:9.5px;color:var(--txt3);font-style:italic}
+.baperson{margin-bottom:18px}
+.basum{font-family:var(--body);font-weight:500;font-size:12.5px;color:var(--txt2);margin-left:8px}
+.batotal .rh{font-weight:800;color:var(--txt)}
+.batotal td .cell{font-weight:800}
+.batotal th.rh,.batotal td{border-top:2px solid var(--line2);padding-top:3px}
+.pgroup.open .psub{display:block}
+.statusbadge{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
+.sb-plan{background:rgba(0,163,224,.15);color:#0277b6}
+.sb-run{background:rgba(122,193,67,.18);color:var(--accent-d)}
+.sb-soon{background:rgba(255,184,28,.16);color:#b9770a}
+.sb-over{background:rgba(239,68,68,.16);color:#d92d2d}
+.sb-done{background:rgba(120,135,160,.16);color:var(--txt2)}
+.compsm{font-family:var(--mono);font-size:9px;color:var(--accent-d);opacity:.85}
+
+.gantt{overflow-x:auto;padding-bottom:8px}
+.gtoggle{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.gtlabel{font-family:var(--mono);font-size:11px;color:var(--txt3);letter-spacing:.5px}
+.gtbtn{font-family:var(--body);font-size:12.5px;color:var(--txt2);background:var(--panel2);border:1px solid var(--line2);padding:7px 14px;border-radius:8px;cursor:pointer;transition:.15s}
+.gtbtn:hover{color:var(--txt)}
+.gtbtn.on{background:var(--accent2);color:#fff;font-weight:700;border-color:var(--accent2)}
+.gwrap{min-width:900px}
+.gmonths{display:grid;grid-template-columns:230px 1fr;align-items:end;margin-bottom:6px}
+.gmlabels{display:grid;grid-template-columns:repeat(12,1fr);font-family:var(--mono);font-size:10.5px;color:var(--txt3);text-align:center}
+.gmlabels span{padding-bottom:6px;border-left:1px solid var(--line)}
+.grow{display:grid;grid-template-columns:230px 1fr;align-items:center;gap:0;height:30px;position:relative}
+.grow:nth-child(even){background:rgba(29,52,84,.025)}
+.glabel{font-size:12px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px;display:flex;align-items:center;gap:7px}
+.glabel .gex{color:var(--txt3);font-size:10.5px;font-family:var(--mono)}
+.gtrack{position:relative;height:100%;background-image:repeating-linear-gradient(90deg,transparent,transparent calc(8.333% - 1px),var(--line) calc(8.333% - 1px),var(--line) 8.333%)}
+.gbar{position:absolute;top:7px;height:16px;border-radius:5px;box-shadow:0 2px 7px rgba(29,52,84,.16);cursor:default;display:flex;align-items:center;padding:0 6px;overflow:hidden}
+.gbar span{font-family:var(--mono);font-size:9.5px;color:#04120f;font-weight:700;white-space:nowrap}
+.gtitlerow{display:grid;grid-template-columns:230px 1fr}
+.gtitlerow .gp{font-size:13px;font-weight:700;color:var(--accent);padding:14px 0 5px;grid-column:1/-1;border-top:1px solid var(--line);margin-top:4px}
+.today{position:absolute;top:0;bottom:0;width:2px;background:var(--c-over);z-index:6;opacity:.8}
+.today::after{content:'сегодня';position:absolute;top:-2px;left:4px;font-family:var(--mono);font-size:9px;color:var(--c-over);white-space:nowrap}
+
+.empty{text-align:center;color:var(--txt3);padding:50px;font-size:14px}
+.hint{font-family:var(--mono);font-size:11px;color:var(--txt3);margin-top:14px}
+.view{display:none} .view.on{display:block}
+
+/* dark theme */
+body.dark{
+  --bg:#0f141c; --bg2:#1a212c; --panel:#161d27; --panel2:#1f2733;
+  --line:#273140; --line2:#364354;
+  --txt:#e7edf5; --txt2:#9fadbf; --txt3:#6b7888;
+  --accent:#8ed24f; --accent-d:#a9e072; --accent2:#3fb6ef;
+  --c-low:#4a86b8; --c-mid:#8ec24f; --c-full:#5fae34; --c-high:#f0a82e; --c-over:#ef5350; --c-zero:#5a6a82;
+  --shadow:0 12px 34px rgba(0,0,0,.45);
+}
+body.dark{background:
+  radial-gradient(1100px 520px at 90% -12%, rgba(63,182,239,.10), transparent 60%),
+  radial-gradient(900px 480px at -5% 108%, rgba(142,210,79,.10), transparent 55%),
+  var(--bg);}
+body.dark .brand h1{background:linear-gradient(92deg,#eef3f8 25%,var(--accent) 120%);-webkit-background-clip:text;background-clip:text}
+body.dark .refresh,body.dark .kpi,body.dark .zbtn.on{background:var(--panel)}
+body.dark .hmtbl th.rh,body.dark .planhdr .hl,body.dark .pleft{background:var(--panel)}
+body.dark .prow.sub .pleft{background:#1b2530}
+body.dark .cell{color:#0c1410}
+body.dark .pbar span,body.dark .loadpill{color:#0c1410}
+
+.themebtn{align-self:flex-start;background:var(--panel);border:1px solid var(--line2);border-radius:10px;
+  font-size:17px;line-height:1;padding:8px 11px;cursor:pointer;transition:.15s}
+.themebtn:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(122,193,67,.18)}
+.brandrow{align-items:flex-start}
+
+.sortsel{font-family:var(--body);font-size:12.5px;color:var(--txt);background:var(--panel2);border:1px solid var(--line2);
+  border-radius:8px;padding:6px 10px;cursor:pointer;outline:none}
+.sortsel:focus{border-color:var(--accent)}
+
+/* drill-down modal */
+.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal[hidden]{display:none}
+.modal-bg{position:absolute;inset:0;background:rgba(15,21,30,.55);backdrop-filter:blur(2px);animation:fade .15s ease}
+.modal-card{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:18px;box-shadow:0 24px 70px rgba(15,30,55,.35);
+  max-width:680px;width:100%;max-height:86vh;overflow:auto;padding:24px;animation:pop .16s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.mclose{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);
+  background:var(--panel2);color:var(--txt2);font-size:16px;cursor:pointer;transition:.15s}
+.mclose:hover{color:var(--c-over);border-color:var(--c-over)}
+.mtitle{font-family:var(--disp);font-weight:800;font-size:19px;letter-spacing:-.3px;padding-right:38px;line-height:1.2}
+.mtags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 14px}
+.mstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.mstat .b{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+.mstat .b .v{font-family:var(--disp);font-weight:800;font-size:18px}
+.mstat .b .l{font-size:10.5px;color:var(--txt2);margin-top:3px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.mrow .who{font-size:13.5px;font-weight:600}
+.mrow .sub2{font-family:var(--mono);font-size:10.5px;color:var(--txt2);margin-top:2px}
+.mq{display:flex;gap:5px}
+.mqc{font-family:var(--mono);font-size:10.5px;font-weight:700;color:#0c1410;border-radius:6px;padding:4px 7px;min-width:42px;text-align:center}
+.mqc .qn{display:block;font-size:8px;font-weight:500;color:rgba(0,0,0,.5)}
+.msec{font-family:var(--mono);font-size:10.5px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin:6px 0 2px}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}.barrow{grid-template-columns:130px 1fr 56px}.barrow .nm{font-size:12px}}
+@media(max-width:640px){
+  .wrap{padding:0 13px}
+  header{padding:18px 0 12px;margin-bottom:16px}
+  .brand h1{font-size:21px}
+  .brand .sub{font-size:11.5px}
+  .brand .tag{font-size:10px}
+  .updated{display:none}
+  .qbar{margin:16px 0 4px}
+  .qpills{flex-wrap:wrap}
+  .qpill{padding:7px 12px;font-size:12.5px}
+  .qpill span{display:none}
+  .tab{padding:11px 13px;font-size:13px}
+  .filters{gap:8px;margin-bottom:16px}
+  .fld{flex:1 1 100%}
+  select,input[type=text]{min-width:0;width:100%}
+  .chipclear{width:100%}
+  .kpis{gap:9px;margin-bottom:18px}
+  .kpi{padding:13px 13px 11px}
+  .kpi .v{font-size:23px}
+  .kpi .l{font-size:11px}
+  .panel{padding:15px 13px 16px;border-radius:14px;margin-bottom:16px}
+  .panel h2{font-size:15px}
+  .panel .ph{font-size:12px}
+  .scrollhint{display:block}
+  .mcell{min-width:34px;font-size:10px;padding:7px 1px}
+  .hmtbl th.rh{min-width:138px}
+  .hmtbl th.mh{font-size:9px}
+  .planwrap{--leftw:208px}
+  .plantbl{min-width:760px}
+  .planhdr .hl{font-size:9px;padding:0 10px 8px}
+  .planhdr .gmlabels{font-size:9px}
+  .pleft{padding:7px 10px}
+  .ptop .nm{font-size:12.5px}
+  .pbot{font-size:9.5px;gap:5px}
+  .prow.sub .pleft{padding-left:20px}
+  .gtoggle{flex-wrap:wrap;gap:6px}
+  .gtbtn{font-size:12px;padding:7px 12px}
+}
+.scrollhint{display:none;font-family:var(--mono);font-size:10.5px;color:var(--txt3);margin:0 0 8px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brandrow">
+    <div class="brand">
+      <h1>Панель загрузки и сроков</h1>
+      <div class="sub">Анализ загрузки исполнителей · контроль сроков · планирование ресурсов</div>
+    </div>
+    <button id="themeBtn" class="themebtn" title="Сменить тему">🌙</button>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div class="databar">
+    <button id="refreshBtn" class="refresh">↻ Обновить данные</button>
+    <span id="dataStatus" class="dstatus"></span>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="filters">
+    <div class="fld"><label>Руководитель</label><div class="msel" id="mselMgr"></div></div>
+    <div class="fld"><label>Компетенция</label><div class="msel" id="mselComp"></div></div>
+    <div class="fld"><label>Поиск (проект / исполнитель)</label><input type="text" id="fSearch" placeholder="введите название…"></div>
+    <button class="chipclear" id="clr">Сбросить</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="view on" id="v-over">
+    <div class="kpis" id="kpis"></div>
+    <div class="panel">
+      <h2>Тепловая карта загрузки по месяцам</h2>
+      <div class="ph">Загрузка каждого исполнителя помесячно (% от полной занятости, реконструировано из «Выделено %» и периода задач). 100% = полная ставка. Красный — перегруз. Справа — среднегодовая.</div>
+      <div class="legend" id="legendHM"></div>
+      <div class="scrollhint">← листайте таблицу по горизонтали →</div>
+      <div class="hm" id="heatmap"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Ресурсы к планированию</h2>
+      <div class="ph">Где есть свободная ёмкость (загрузка &lt; 100%) по месяцам, и проекты без назначенного ресурса. Фильтр по компетенции — кого и что показать.</div>
+      <div class="planhz"><span class="qlabel">Горизонт</span><div class="qpills" id="planHzPills"></div></div>
+      <div class="legend" id="planCompFilter"></div>
+      <div class="msec2">Свободные ресурсы · запас по месяцам (% до полной ставки)</div>
+      <div class="scrollhint">← листайте таблицу по горизонтали →</div>
+      <div class="hm" id="freeRes"></div>
+      <div class="msec2" style="margin-top:18px">Нужен ресурс · проекты без назначенного исполнителя</div>
+      <div id="needRes"></div>
+    </div>
+  </div>
+
+  <!-- PROJECTS + TIMELINE + EXECUTORS (merged) -->
+  <div class="view" id="v-plan">
+    <div class="panel">
+      <h2>Детализация · проекты, сроки и загрузка · 2026</h2>
+      <div class="ph">Строка = проект или исполнитель: слева сводка и загрузка, справа полоса на шкале месяцев. Нажмите на строку, чтобы раскрыть детализацию. В режиме «По проектам» цвет полос — руководитель; в режиме «По исполнителям» строка показывает суммарную загрузку по месяцам (цвет — уровень загрузки, число — % ставки).</div>
+      <div class="gtoggle"><span class="gtlabel">Группировка:</span>
+        <button class="gtbtn" data-g="project">По проектам</button>
+        <button class="gtbtn" data-g="executor">По исполнителям</button>
+        <span class="gtlabel" style="margin-left:8px">Сортировка:</span>
+        <select id="planSort" class="sortsel"></select>
+        <span style="flex:1"></span>
+        <span class="gtlabel" id="planCount"></span>
+      </div>
+      <div class="scrollhint">← листайте таблицу по горизонтали →</div>
+      <div class="planwrap"><div class="plantbl" id="planTbl"></div></div>
+      <div class="hint">▶ клик по строке — раскрыть · клик по названию — карточка с деталями · линия — сегодня (03.06.2026) · ◆ — дедлайн</div>
+    </div>
+  </div>
+
+  <!-- BA LOAD -->
+  <div class="view" id="v-ba">
+    <div class="panel">
+      <h2>Загрузка бизнес-аналитиков · по полумесяцам</h2>
+      <div class="ph">Доля рабочего времени по периодам (1-15 / 15-30). 100% = полная занятость. Строка «Итого» — суммарная загрузка БА; красный — перегруз. Источник — отдельный файл «Загрузка БА».</div>
+      <div class="legend" id="legendBA"></div>
+      <div class="scrollhint">← листайте таблицу по горизонтали →</div>
+      <div id="baWrap"></div>
+    </div>
+  </div>
+</div>
+
+<div id="drill" class="modal" hidden><div class="modal-bg" id="drillBg"></div><div class="modal-card" id="drillCard"></div></div>
+
+<script>
+const DATA = [{"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6971", "start": "2026-01-12", "end": "2026-06-30", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6972", "start": "2026-07-01", "end": "2026-08-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.6666666667, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6973", "start": "2026-09-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.1666666667, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-6974", "start": "2026-01-12", "end": "2026-05-08", "alloc": 0.5, "q1": 0.4453125, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-6975", "start": "2026-05-08", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0, "q2": 0.05846153846, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-6976", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.2, "q4": 0.0}, {"project": "Автослотинг", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-10429", "start": "2026-05-18", "end": "2026-09-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Автослотинг", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-10430", "start": "2026-07-01", "end": "2026-09-10", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.7878787879, "q4": 0.0}, {"project": "Автослотинг", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-10431", "start": "2026-07-01", "end": "2026-09-10", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.7878787879, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Павел Чистяков", "cab": "https://detmir.atlassian.net/browse/CAB-6116", "start": "2026-01-12", "end": "2026-07-31", "alloc": 0.9, "q1": 0.8015625, "q2": 0.9, "q3": 0.3136363636, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-6117", "start": "2026-02-02", "end": "2026-03-13", "alloc": 1.0, "q1": 0.46875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Александр Грязнов", "cab": "https://detmir.atlassian.net/browse/CAB-6118", "start": "2026-03-02", "end": "2026-07-31", "alloc": 0.5, "q1": 0.171875, "q2": 0.5, "q3": 0.1742424242, "q4": 0.0}, {"project": "Автозапуск", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-6119", "start": "2025-01-13", "end": "2026-07-31", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.1045454545, "q4": 0.0}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Андрей Жураховский", "cab": "https://detmir.atlassian.net/browse/CAB-6289", "start": "2026-01-12", "end": "2026-12-30", "alloc": 0.7, "q1": 0.6234375, "q2": 0.7, "q3": 0.7, "q4": 0.6893939394}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-6290", "start": "2026-01-12", "end": "2026-05-08", "alloc": 0.9, "q1": 0.8015625, "q2": 0.3876923077, "q3": 0.0, "q4": 0.0}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-6291", "start": "2026-05-10", "end": "2026-12-30", "alloc": 0.3, "q1": 0.0, "q2": 0.1707692308, "q3": 0.3, "q4": 0.2954545455}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-6292", "start": "2026-01-01", "end": "2026-12-30", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.3, "q4": 0.2954545455}, {"project": "Работа c ВГХ товара", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4942", "start": "2026-01-12", "end": "2026-07-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.1045454545, "q4": 0.0}, {"project": "Работа c ВГХ товара", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-4943", "start": "2026-01-12", "end": "2026-03-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Работа c ВГХ товара", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-4944", "start": "2026-03-02", "end": "2026-06-30", "alloc": 0.5, "q1": 0.171875, "q2": 0.5, "q3": 0.0, "q4": 0.0}, {"project": "Упаковка индивидуальная", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Реализовать общую дорожку сборки на Б-2 для отказа от PBL", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-7099", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Мультипикинг", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Без назначения", "cab": "", "start": "2026-02-02", "end": "2026-03-06", "alloc": 0.5, "q1": 0.1953125, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Мультипикинг ШП для Урала", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Андрей Жураховский", "cab": "https://detmir.atlassian.net/browse/CAB-10332", "start": "2026-03-10", "end": "2026-05-08", "alloc": 0.5, "q1": 0.125, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Обработка межскладских перемещений", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "", "start": "2026-09-01", "end": "2026-12-07", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.3333333333, "q4": 0.7272727273}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.8, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.5212121212}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.3257575758}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.1, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.06515151515}, {"project": "Вторичный контроль (масштабирование)", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-4858", "start": "2026-01-12", "end": "2026-06-30", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "Вторичный контроль (масштабирование)", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-4858", "start": "2026-06-01", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0, "q2": 0.03384615385, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-3072", "start": "2026-01-12", "end": "2026-02-05", "alloc": 1.0, "q1": 0.296875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-3073", "start": "2026-03-16", "end": "2026-12-31", "alloc": 1.0, "q1": 0.1875, "q2": 1.0, "q3": 1.0, "q4": 1.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Станислав Хлобыстов", "cab": "https://detmir.atlassian.net/browse/CAB-3074", "start": "2026-03-23", "end": "2026-05-08", "alloc": 0.5, "q1": 0.0546875, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Станислав Хлобыстов", "cab": "https://detmir.atlassian.net/browse/CAB-3075", "start": "2026-05-10", "end": "2026-12-31", "alloc": 0.9, "q1": 0.0, "q2": 0.5123076923, "q3": 0.9, "q4": 0.9}, {"project": "Работа с марками на складе", "competency": "SAP_GIS_EDO", "manager": "Олег Саушкин", "executor": "Радик Хамитов", "cab": "https://detmir.atlassian.net/browse/CAB-3076", "start": "2026-03-12", "end": "2026-12-31", "alloc": 0.2, "q1": 0.04375, "q2": 0.2, "q3": 0.2, "q4": 0.2}, {"project": "Работа с марками на складе", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-3077", "start": "2026-01-01", "end": "2026-12-31", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.3, "q4": 0.3}, {"project": "YMS", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4453", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.3, "q4": 0.3}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-4454", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.5, "q4": 0.5}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Хапаев", "cab": "https://detmir.atlassian.net/browse/CAB-4455", "start": "2026-07-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.5, "q4": 0.0}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Хапаев", "cab": "https://detmir.atlassian.net/browse/CAB-4456", "start": "2026-10-01", "end": "2026-12-30", "alloc": 0.9, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.8863636364}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-4457", "start": "2026-05-11", "end": "2026-07-10", "alloc": 0.9, "q1": 0.0, "q2": 0.5123076923, "q3": 0.1090909091, "q4": 0.0}, {"project": "YMS", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Роман Поверенный", "cab": "https://detmir.atlassian.net/browse/CAB-4458", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.6, "q1": 0.534375, "q2": 0.6, "q3": 0.4, "q4": 0.0}, {"project": "YMS", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Ольга Воинова", "cab": "https://detmir.atlassian.net/browse/CAB-4459", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.3333333333, "q4": 0.0}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б1", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-8578", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б2", "competency": "CASH", "manager": "Павел Шакиров", "executor": "Наталья Золотарева", "cab": "https://detmir.atlassian.net/browse/CAB-8579", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б3", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-8580", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.1, "q1": 0.0, "q2": 0.04153846154, "q3": 0.1, "q4": 0.007575757576}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б4", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Марина Котелевская", "cab": "https://detmir.atlassian.net/browse/CAB-8581", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б5", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8582", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.1, "q1": 0.0, "q2": 0.04153846154, "q3": 0.1, "q4": 0.007575757576}, {"project": "Доставка ИМ с РЦ Б1 через Урал", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9306", "start": "2026-07-01", "end": "2026-08-25", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.6060606061, "q4": 0.0}, {"project": "Доставка ИМ с РЦ Б1 через Урал", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9307", "start": "2026-07-01", "end": "2026-10-30", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 1.0, "q4": 0.3333333333}, {"project": "Работа с АЕИ измерения на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-4468", "start": "2026-04-01", "end": "2026-06-01", "alloc": 0.5, "q1": 0.0, "q2": 0.3384615385, "q3": 0.0, "q4": 0.0}, {"project": "Размещение изшликов по местам отбора по задачам", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-10122", "start": "2026-09-01", "end": "2026-10-12", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.1666666667, "q4": 0.06060606061}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Евгений Петров", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.1, "q1": 0.0890625, "q2": 0.1, "q3": 0.1, "q4": 0.1}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Александр Грязнов", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.5, "q4": 0.5}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Без назначения", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-04-01", "end": "2026-06-30", "alloc": 0.2, "q1": 0.0, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "SAP BI", "manager": "Павел Шакиров", "executor": "Сергей Егоров", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-03-18", "end": "2026-07-20", "alloc": 0.7, "q1": 0.109375, "q2": 0.7, "q3": 0.1484848485, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-03-18", "end": "2026-07-20", "alloc": 0.1, "q1": 0.015625, "q2": 0.1, "q3": 0.02121212121, "q4": 0.0}, {"project": "Калькулятор Импорта", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Ольга Воинова", "cab": "https://detmir.atlassian.net/browse/CAB-8545", "start": "2026-03-23", "end": "2026-06-30", "alloc": 0.7, "q1": 0.0765625, "q2": 0.7, "q3": 0.0, "q4": 0.0}, {"project": "Калькулятор Импорта", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8545", "start": "2026-03-23", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0109375, "q2": 0.1, "q3": 0.0, "q4": 0.0}, {"project": "Минимальный Нормативный Запас (МНЗ)", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Константин Пантелеев", "cab": "https://detmir.atlassian.net/browse/CAB-9381", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.2, "q1": 0.021875, "q2": 0.1938461538, "q3": 0.0, "q4": 0.0}, {"project": "Минимальный Нормативный Запас (МНЗ)", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9381", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.05, "q1": 0.00546875, "q2": 0.04846153846, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-01-12", "end": "2026-03-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-04-01", "end": "2026-05-25", "alloc": 0.8, "q1": 0.0, "q2": 0.48, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-26", "end": "2026-08-31", "alloc": 0.3, "q1": 0.0, "q2": 0.12, "q3": 0.2, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Анастасия Емельянова", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-17", "end": "2026-08-31", "alloc": 0.8, "q1": 0.0, "q2": 0.3938461538, "q3": 0.5333333333, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-17", "end": "2026-08-31", "alloc": 0.3, "q1": 0.0, "q2": 0.1476923077, "q3": 0.2, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Хапаев Дмитрий", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-05-25", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-05-04", "end": "2026-09-30", "alloc": 0.3, "q1": 0.0, "q2": 0.1938461538, "q3": 0.3, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Мироничева", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-03-02", "end": "2026-09-30", "alloc": 0.9, "q1": 0.309375, "q2": 0.9, "q3": 0.9, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_GIS_EDO", "manager": "Павел Шакиров", "executor": "Владислав Костин", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.7, "q1": 0.6234375, "q2": 0.7, "q3": 0.7, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Татьяна Магдалина", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-04-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.5, "q3": 0.5, "q4": 0.0}, {"project": "ЭТРН", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.3, "q4": 0.0}, {"project": "Прогнозирование продаж (ML)", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9897", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Прогнозирование продаж (ML)", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9897", "start": "2026-03-02", "end": "2026-12-31", "alloc": 0.1, "q1": 0.034375, "q2": 0.1, "q3": 0.1, "q4": 0.1}, {"project": "Событийный контроль", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5706", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Событийный контроль", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5706", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Промо", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Евгений Савицкий", "cab": "https://detmir.atlassian.net/browse/CAB-9895", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.2, "q1": 0.021875, "q2": 0.1938461538, "q3": 0.0, "q4": 0.0}, {"project": "Промо", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9895", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.05, "q1": 0.00546875, "q2": 0.04846153846, "q3": 0.0, "q4": 0.0}, {"project": "Задачи Автозаказа", "competency": "SAP_LO", "manager": "Компаниченко Владислав", "executor": "Константин Пантелеев", "cab": "https://detmir.atlassian.net/browse/CAB-6798", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.8, "q4": 0.8}, {"project": "Задачи Автозаказа", "competency": "SAP_LO", "manager": "Компаниченко Владислав", "executor": "Евгений Савицкий", "cab": "https://detmir.atlassian.net/browse/CAB-6798", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.8, "q4": 0.8}, {"project": "Бекасово - 3", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-8907", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.2, "q4": 0.0}, {"project": "Бекасово - 3", "competency": "SAP_GIS_EDO", "manager": "Иракли Бурдули", "executor": "Александр Кривоногов", "cab": "https://detmir.atlassian.net/browse/CAB-8907", "start": "2026-01-12", "end": "2026-08-31", "alloc": 1.0, "q1": 0.890625, "q2": 1.0, "q3": 0.6666666667, "q4": 0.0}, {"project": "Разбор задач бэклога", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Елена Смирнова", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 1.0, "q1": 0.890625, "q2": 1.0, "q3": 1.0, "q4": 1.0}, {"project": "Модернизация шкафов выдачи ТСД", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4534", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.1333333333, "q4": 0.0}, {"project": "Модернизация шкафов выдачи ТСД", "competency": "WEB", "manager": "Иракли Бурдули", "executor": "Владимир Иванов", "cab": "https://detmir.atlassian.net/browse/CAB-4534", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.3333333333, "q4": 0.0}, {"project": "Интеграция с агентом ПВЗ Яндекс", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-9677", "start": "2026-04-30", "end": "2026-10-30", "alloc": 0.2, "q1": 0.0, "q2": 0.1353846154, "q3": 0.2, "q4": 0.06666666667}, {"project": "Интеграция с агентом ПВЗ Яндекс", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-9677", "start": "2026-04-30", "end": "2026-10-30", "alloc": 0.2, "q1": 0.0, "q2": 0.1353846154, "q3": 0.2, "q4": 0.06666666667}, {"project": "Интеграция с агентом Почта РФ", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-9611", "start": "2025-10-01", "end": "2026-06-30", "alloc": 0.2, "q1": 0.2, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "X5 - ДМ Экспресс Доставка (LM)", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-10528", "start": "2026-05-01", "end": "2026-10-30", "alloc": 0.1, "q1": 0.0, "q2": 0.06615384615, "q3": 0.1, "q4": 0.03333333333}, {"project": "Продажа поддонов с магазинов", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-5227", "start": "2026-06-07", "end": "2026-07-31", "alloc": 0.05, "q1": 0.0, "q2": 0.01307692308, "q3": 0.01742424242, "q4": 0.0}, {"project": "Продажа поддонов с магазинов", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5227", "start": "2026-06-08", "end": "2026-09-30", "alloc": 0.15, "q1": 0.0, "q2": 0.03923076923, "q3": 0.15, "q4": 0.0}, {"project": "Портал по работе с аутсорсом", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5966", "start": "2026-05-04", "end": "2026-12-31", "alloc": 0.05, "q1": 0.0, "q2": 0.03230769231, "q3": 0.05, "q4": 0.05}, {"project": "Реализация мобильного приложения для  собственных курьеров", "competency": "SAP_LO", "manager": "Илья Троян", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-8483", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Реализация мобильного приложения для  собственных курьеров", "competency": "РП", "manager": "Илья Троян", "executor": "Илья Троян", "cab": "https://detmir.atlassian.net/browse/CAB-8483", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}];
+const TODAY = new Date('2026-06-03');
+const QS = [['q1','Q1','янв–мар'],['q2','Q2','апр–июн'],['q3','Q3','июл–сен'],['q4','Q4','окт–дек']];
+const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+const MGR_COLORS = {};
+const palette = ['#6b9bc3','#86a96b','#d4a85a','#cc8072','#9487bb','#5f7e9e','#c08aa6'];
+
+let state = {q:'all', view:'over', mgrs:[], comps:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future'};
+
+// ---- helpers ----
+function loadColor(v){
+  if(v<=0.001) return 'var(--bg2)';
+  if(v<0.5) return 'var(--c-low)';
+  if(v<0.85) return 'var(--c-mid)';
+  if(v<=1.001) return 'var(--c-full)';
+  if(v<=1.25) return 'var(--c-high)';
+  return 'var(--c-over)';
+}
+function fmtPct(v){return Math.round(v*100)+'%';}
+function vd(s){return !!s && !isNaN(+new Date(s));}
+function fmtDate(s){if(!vd(s))return '—';const d=new Date(s);return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+String(d.getFullYear()).slice(-2);}
+function mergeRows(arr){
+  // Дедуп ТОЛЬКО полных дублей (все поля совпадают). Строки одной задачи с разными
+  // периодами/долями НЕ склеиваем — иначе ломается помесячный расчёт загрузки.
+  const m={};
+  arr.forEach(r=>{
+    const k=[r.project,r.executor,r.competency,r.manager,r.start,r.end,r.alloc,r.q1,r.q2,r.q3,r.q4].join('|');
+    if(!m[k]) m[k]={...r, _parts:1};
+    else m[k]._parts++;
+  });
+  return Object.values(m);
+}
+let ROWS = mergeRows(DATA);
+const BA = {"people": [{"person": "Троян", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": true, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}], "tasks": [{"project": "Планирование прогнозирование", "ticket": "", "loads": {"01H1": 0.5, "01H2": 0.5, "02H1": 0.2, "02H2": 0.2, "03H2": 0.1, "04H1": 0.4, "04H2": 0.4, "05H1": 0.2, "05H2": 0.2}}, {"project": "Шкафы ТСД", "ticket": "", "loads": {"01H2": 0.2, "02H1": 0.1, "02H2": 0.1, "04H1": 0.15, "04H2": 0.15, "05H1": 0.3, "05H2": 0.3}}, {"project": "Мультипикинг +  МП ШП Урал", "ticket": "", "loads": {"01H1": 0.4, "01H2": 0.2, "02H1": 0.2, "02H2": 0.2, "03H2": 0.2, "04H1": 0.05, "04H2": 0.05, "05H1": 0.05, "05H2": 0.05}}, {"project": "АЕИ", "ticket": "", "loads": {"02H1": 0.4, "02H2": 0.5, "03H2": 0.5}}, {"project": "Обработка марок импорт", "ticket": "", "loads": {"04H1": 0.3, "04H2": 0.3, "05H1": 0.3, "05H2": 0.3}}, {"project": "Курьерская доставка", "ticket": "", "loads": {"05H1": 0.05, "05H2": 0.05}}, {"project": "РЦ через кассу", "ticket": "", "loads": {"02H2": 0.1, "03H2": 0.1}}, {"project": "Марки (масштабирование)", "ticket": "", "loads": {}}, {"project": "Автозаказ", "ticket": "", "loads": {"01H1": 0.1, "01H2": 0.1, "02H1": 0.1, "02H2": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1, "05H1": 0.1, "05H2": 0.1}}], "total": {"01H1": 1.0, "01H2": 1.0, "02H1": 1.0, "02H2": 1.2, "03H1": 0.0, "03H2": 1.0, "04H1": 1.0, "04H2": 1.0, "05H1": 1.0, "05H2": 1.0}}, {"person": "Куренная", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}, {"key": "06H1", "lbl": "Июн 1-19", "vac": false, "m": 6, "half": "H1"}, {"key": "06H2", "lbl": "Июн 22-30", "vac": true, "m": 6, "half": "H2"}], "tasks": [{"project": "Портал ВЭД CAB-5849", "ticket": "CAB-5849", "loads": {"01H2": 0.3, "02H1": 0.3, "02H2": 0.3, "03H1": 0.3, "03H2": 0.3, "04H1": 0.3, "04H2": 0.3, "05H1": 0.2, "05H2": 0.2, "06H1": 0.2}}, {"project": "ЭТРН CAB-2177", "ticket": "CAB-2177", "loads": {"01H2": 0.3, "02H1": 0.3, "02H2": 0.3, "03H1": 0.3, "03H2": 0.4, "04H1": 0.4, "04H2": 0.3, "05H1": 0.3, "05H2": 0.3, "06H1": 0.3}}, {"project": "Портал по работе с аутсорсом", "ticket": "", "loads": {"02H1": 0.2}}, {"project": "Тайминг отправки заказов\nCAB-10192", "ticket": "CAB-10192", "loads": {"01H2": 0.4, "02H1": 0.2, "02H2": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1, "05H1": 0.1, "05H2": 0.1, "06H1": 0.2}}, {"project": "Корректировка тарифов СК\nCAB-10612", "ticket": "CAB-10612", "loads": {"06H1": 0.2}}, {"project": "Инструмент мониторинга", "ticket": "", "loads": {"02H2": 0.1, "03H1": 0.1}}, {"project": "ДУИТ задачи", "ticket": "", "loads": {"03H2": 0.2}}, {"project": "Поставки с Честным знаком", "ticket": "", "loads": {"02H2": 0.2}}, {"project": "Приемка", "ticket": "", "loads": {"04H1": 0.2, "04H2": 0.2, "05H1": 0.2, "05H2": 0.2}}, {"project": "Поставки из ЕАЭС Спот", "ticket": "", "loads": {"05H1": 0.2, "05H2": 0.2}}], "total": {"01H1": 0.0, "01H2": 1.0, "02H1": 1.0, "02H2": 1.0, "03H1": 0.7, "03H2": 1.0, "04H1": 1.0, "04H2": 0.9, "05H1": 1.0, "05H2": 1.0, "06H1": 0.9, "06H2": 0.0}}, {"person": "Климова", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}, {"key": "06H1", "lbl": "Июн 1-15", "vac": false, "m": 6, "half": "H1"}, {"key": "06H2", "lbl": "Июн 15-30", "vac": false, "m": 6, "half": "H2"}, {"key": "07H1", "lbl": "Июл 1-15", "vac": false, "m": 7, "half": "H1"}, {"key": "07H2", "lbl": "Июл 15-30", "vac": false, "m": 7, "half": "H2"}], "tasks": [{"project": "Брак - разнесение потерь", "ticket": "CAB-5036", "loads": {"01H2": 0.2, "02H1": 0.2, "02H2": 0.1, "03H1": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1, "05H1": 0.1, "05H2": 0.1}}, {"project": "Автозапуск онлайн + агенты", "ticket": "CAB-6116", "loads": {"03H2": 0.2, "04H1": 0.2, "04H2": 0.2}}, {"project": "Скорости самовывоза", "ticket": "CAB-9892", "loads": {"01H2": 0.2, "02H1": 0.3, "02H2": 0.2, "03H1": 0.2, "03H2": 0.2, "04H1": 0.2, "04H2": 0.2, "05H1": 0.1, "05H2": 0.1, "06H1": 0.1, "06H2": 0.1}}, {"project": "Размещение излишков по местам отбора по задачам", "ticket": "CAB-10122", "loads": {"01H2": 0.2, "02H1": 0.4, "02H2": 0.3, "03H1": 0.3, "03H2": 0.2}}, {"project": "Вторичный контроль комплектования", "ticket": "CAB-5146", "loads": {"01H2": 0.1, "02H1": 0.1, "02H2": 0.1}}, {"project": "Автослотинг ( +хранение)", "ticket": "CAB-10429", "loads": {"03H2": 0.3, "04H1": 0.5, "04H2": 0.3, "05H1": 0.3, "05H2": 0.3}}, {"project": "ЛК для Аутсорса", "ticket": "", "loads": {"01H2": 0.3}}, {"project": "Интеграция Агентов", "ticket": "CAB-10528", "loads": {"02H2": 0.3, "03H1": 0.3, "05H1": 0.3, "05H2": 0.3, "06H1": 0.1, "06H2": 0.1}}, {"project": "Продажа 3м лицам", "ticket": "CAB-10509", "loads": {"05H1": 0.2, "05H2": 0.2, "06H1": 0.1, "06H2": 0.1}}, {"project": "Озон КЗ", "ticket": "CAB-9772", "loads": {"06H1": 0.4, "06H2": 0.4}}, {"project": "Разбор MI", "ticket": "CAB-7764", "loads": {"06H1": 0.1, "06H2": 0.1}}, {"project": "Отчетность Lassie", "ticket": "", "loads": {"06H1": 0.2, "06H2": 0.2}}], "total": {"01H1": 1.0, "01H2": 1.0, "02H1": 1.0, "02H2": 1.0, "03H1": 0.9, "03H2": 1.0, "04H1": 1.0, "04H2": 0.8, "05H1": 1.0, "05H2": 1.0, "06H1": 1.0, "06H2": 1.0, "07H1": 0.0, "07H2": 0.0}}, {"person": "Комина", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}], "tasks": [{"project": "YMS Локалы", "ticket": "", "loads": {"01H1": 0.6, "01H2": 0.5, "02H1": 0.3, "02H2": 0.1, "03H1": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1}}, {"project": "YMS Общий пункт обработки (Маркетплейс)", "ticket": "", "loads": {"01H1": 0.3, "01H2": 0.2, "02H1": 0.4, "02H2": 0.3, "03H1": 0.3, "03H2": 0.3}}, {"project": "МПК", "ticket": "", "loads": {"01H1": 0.1, "01H2": 0.1, "02H1": 0.1, "02H2": 0.1, "03H1": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1}}, {"project": "YMS Импорт", "ticket": "", "loads": {}}, {"project": "Доставка ИМ б1 через Урал", "ticket": "", "loads": {"02H2": 0.3, "03H1": 0.3, "03H2": 0.3}}, {"project": "Приемка (масштабирование)", "ticket": "", "loads": {"04H1": 0.3, "04H2": 0.3}}, {"project": "Смена логики выбора Агента при отгрузке с РЦ", "ticket": "", "loads": {"02H2": 0.2, "03H1": 0.2, "03H2": 0.2}}], "total": {"01H1": 1.0, "01H2": 0.8, "02H1": 0.8, "02H2": 1.0, "03H1": 1.0, "03H2": 1.0, "04H1": 0.5, "04H2": 0.5}}], "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}, {"key": "06H1", "lbl": "Июн 1-15", "vac": false, "m": 6, "half": "H1"}, {"key": "06H2", "lbl": "Июн 15-30", "vac": false, "m": 6, "half": "H2"}, {"key": "07H1", "lbl": "Июл 1-15", "vac": false, "m": 7, "half": "H1"}, {"key": "07H2", "lbl": "Июл 15-30", "vac": false, "m": 7, "half": "H2"}]};
+
+function matchF(r){
+  if(state.mgrs.length && !state.mgrs.includes(r.manager)) return false;
+  if(state.comps.length && !state.comps.includes(r.competency)) return false;
+  if(state.search){
+    const s=state.search.toLowerCase();
+    if(!(r.project.toLowerCase().includes(s)||r.executor.toLowerCase().includes(s))) return false;
+  }
+  return true;
+}
+function filtered(){ return ROWS.filter(matchF); }
+function rawFiltered(){ return ROWS.filter(matchF); }  // живые данные (раньше тут был застывший снимок DATA)
+function recLoad(r){return state.q==='all' ? ((r.q1+r.q2+r.q3+r.q4)/4) : (r[state.q]||0);}
+function execLoadMap(rows){
+  const m={};
+  rows.forEach(r=>{
+    if(!m[r.executor]) m[r.executor]={q1:0,q2:0,q3:0,q4:0,tasks:[]};
+    const e=m[r.executor];
+    QS.forEach(([k])=>e[k]+=r[k]||0);
+    e.tasks.push(r);
+  });
+  Object.values(m).forEach(e=>{
+    e.avg=(e.q1+e.q2+e.q3+e.q4)/4;
+    e.peak=Math.max(e.q1,e.q2,e.q3,e.q4);
+    e.peakQ=QS[[e.q1,e.q2,e.q3,e.q4].indexOf(e.peak)][1];
+    e.total=state.q==='all' ? e.avg : e[state.q];
+    e.tasks=e.tasks.filter(t=> state.q==='all' ? (t.q1+t.q2+t.q3+t.q4)>0 : (t[state.q]||0)>0);
+  });
+  return m;
+}
+
+// ---- controls ----
+function buildQ(){
+  const el=document.getElementById('qpills');
+  el.innerHTML='';
+  const opts=[['all','Все','год']].concat(QS);
+  opts.forEach(([k,lbl,sub])=>{
+    const b=document.createElement('button');
+    b.className='qpill'+(state.q===k?' on':'');
+    b.innerHTML=lbl+' <span style="opacity:.6;font-size:11px">'+sub+'</span>';
+    b.onclick=()=>{state.q=k;render();};
+    el.appendChild(b);
+  });
+}
+const TABS=[['over','Обзор'],['plan','Детализация'],['ba','Загрузка БА']];
+function buildTabs(){
+  const el=document.getElementById('tabs');el.innerHTML='';
+  TABS.forEach(([k,lbl])=>{
+    const b=document.createElement('button');
+    b.className='tab'+(state.view===k?' on':'');
+    b.textContent=lbl;
+    b.onclick=()=>{state.view=k;render();};
+    el.appendChild(b);
+  });
+}
+function buildFilters(){
+  const mgrs=[...new Set(ROWS.map(r=>r.manager))].sort((a,b)=>a.localeCompare(b,'ru'));
+  const comps=[...new Set(ROWS.map(r=>r.competency))].sort((a,b)=>a.localeCompare(b,'ru'));
+  // отбрасываем выбранное, чего больше нет в данных
+  state.mgrs=state.mgrs.filter(x=>mgrs.includes(x));
+  state.comps=state.comps.filter(x=>comps.includes(x));
+  buildMSel('mselMgr', mgrs, state.mgrs, 'Все руководители');
+  buildMSel('mselComp', comps, state.comps, 'Все компетенции');
+  document.getElementById('fSearch').oninput=e=>{state.search=e.target.value;render();};
+  document.getElementById('clr').onclick=()=>{
+    state.mgrs.length=0; state.comps.length=0; state.search='';
+    document.getElementById('fSearch').value=''; buildFilters(); render();
+  };
+  mgrs.forEach((m,i)=>MGR_COLORS[m]=palette[i%palette.length]);
+}
+function buildMSel(id, options, sel, label){
+  const box=document.getElementById(id);
+  const btnTxt=()=> sel.length===0 ? label : (sel.length===1 ? sel[0] : sel.length+' выбрано');
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  box.classList.add('msel');
+  box.innerHTML=`<button type="button" class="msel-btn${sel.length?' has':''}">${esc(btnTxt())}</button>
+    <div class="msel-panel">
+      <div class="msel-opt msel-all">Все (сбросить)</div>
+      ${options.map(o=>`<label class="msel-opt"><input type="checkbox" value="${esc(o)}"${sel.includes(o)?' checked':''}><span>${esc(o)}</span></label>`).join('')}
+    </div>`;
+  const btn=box.querySelector('.msel-btn');
+  const refresh=()=>{ btn.textContent=btnTxt(); btn.classList.toggle('has', sel.length>0); };
+  btn.onclick=(e)=>{ e.stopPropagation();
+    const open=box.classList.contains('open');
+    document.querySelectorAll('.msel.open').forEach(x=>x.classList.remove('open'));
+    if(!open) box.classList.add('open');
+  };
+  box.querySelector('.msel-all').onclick=()=>{ sel.length=0;
+    box.querySelectorAll('input').forEach(i=>i.checked=false); refresh(); render(); };
+  box.querySelectorAll('input').forEach(inp=>{
+    inp.onchange=()=>{ const v=inp.value, i=sel.indexOf(v);
+      if(inp.checked){ if(i<0) sel.push(v); } else if(i>=0) sel.splice(i,1);
+      refresh(); render(); };
+  });
+}
+
+// ---- planning block (free resources + needs) ----
+const PLAN_COMPS = ['SAP EWM','SAP_LO','РП'];
+function freeColor(f){ if(f<=0.05) return 'var(--bg2)'; return 'rgba(108,179,58,'+(0.18+f*0.8).toFixed(2)+')'; }
+function cabOf(rowsArr){ for(const r of rowsArr){ if(r.cab && /^https?:\/\//i.test(r.cab)) return r.cab; } return ''; }
+function cabTicket(url){ const m=String(url).match(/([A-Za-z]+-\d+)\s*$/); return m?m[1]:'CAB'; }
+function cabBadge(url){ if(!url||!/^https?:\/\//i.test(url)) return ''; 
+  return `<a class="cablink" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Открыть в Jira: ${url}">↗ ${cabTicket(url)}</a>`; }
+function todayPos(){ const Y0=+new Date('2026-01-01'), SPAN=+new Date('2026-12-31')-Y0; return Math.max(0,Math.min(100,(+TODAY-Y0)/SPAN*100)); }
+function planCompLegend(){
+  return PLAN_COMPS.map(c=>{
+    const on=state.planComps.includes(c);
+    return `<button class="zbtn${on?' on':''}" data-pc="${c}"><i class="sw" style="background:var(--accent)"></i>${c}</button>`;
+  }).join('') + (state.planComps.length?`<button class="zbtn zclear" data-pc="__clear">× сброс</button>`:'');
+}
+function wirePlanCompLegend(){
+  document.querySelectorAll('#planCompFilter .zbtn').forEach(b=>{
+    b.onclick=()=>{ const c=b.dataset.pc;
+      if(c==='__clear') state.planComps=[];
+      else { const i=state.planComps.indexOf(c); if(i<0)state.planComps.push(c); else state.planComps.splice(i,1); }
+      render();
+    };
+  });
+}
+function renderPlanning(){
+  const raw=ROWS.filter(matchF);
+  const sel=state.planComps;
+  const effective = sel.length ? sel : PLAN_COMPS;            // без выбора — показываем только EWM/LO/РП
+  const compsMatch=set=> [...set].some(c=>effective.includes(c));
+  const onlyAllowed=set=> [...set].filter(c=>PLAN_COMPS.includes(c)).sort();
+  // горизонт: с текущего месяца (включительно) или весь год
+  const startM = state.planHorizon==='future' ? TODAY.getMonth() : 0;   // июнь = 5
+  const months = []; for(let mi=startM;mi<12;mi++) months.push(mi);
+
+  // свободные ресурсы
+  const byExec={};
+  raw.forEach(r=>{ if(r.executor==='Без назначения') return;
+    if(!byExec[r.executor]) byExec[r.executor]={m:Array(12).fill(0),comps:new Set()};
+    for(let mi=0;mi<12;mi++) byExec[r.executor].m[mi]+=monthLoad(r,mi);
+    byExec[r.executor].comps.add(r.competency); });
+  const list=Object.entries(byExec)
+    .filter(([n,v])=> compsMatch(v.comps) && months.some(mi=>v.m[mi]<0.995))
+    .map(([n,v])=>{ const free=v.m.map(x=>Math.max(0,1-x));
+       const tot=months.reduce((s,mi)=>s+free[mi],0); return {n,v,free,tot}; })
+    .sort((a,b)=>b.tot-a.tot);
+  let ah='<table class="hmtbl"><thead><tr><th class="rh">Исполнитель / компетенции</th>'+
+    months.map(mi=>`<th class="mh">${MONTHS[mi]}</th>`).join('')+
+    '<th class="mh">Своб.<br><span style="color:var(--txt3)">сред.</span></th></tr></thead><tbody>';
+  list.forEach(o=>{
+    const comps=onlyAllowed(o.v.comps).map(c=>`<span class="hmcomp">${c}</span>`).join('');
+    ah+=`<tr><th class="rh"><div class="hmname">${o.n}</div><div class="hmcomps">${comps}</div></th>`+
+      months.map(mi=>{const f=o.free[mi],z=f<=0.05;return `<td><div class="cell mcell${z?' zero':''}" style="background:${freeColor(f)}" title="${MONTHS[mi]}: свободно ${fmtPct(f)}">${z?'·':Math.round(f*100)}</div></td>`;}).join('')+
+      `<td><div class="cell" style="background:${freeColor(o.tot/months.length)}">${Math.round(o.tot/months.length*100)}%</div></td></tr>`;
+  });
+  ah+='</tbody></table>';
+  document.getElementById('freeRes').innerHTML = list.length?ah:'<div class="empty">Нет свободных ресурсов по выбранным компетенциям</div>';
+
+  // нужен ресурс (строки без исполнителя); прячем полностью прошедшие
+  const needs=raw.filter(r=> r.executor==='Без назначения'
+      && compsMatch(new Set([r.competency]))
+      && months.some(mi=>monthLoad(r,mi)>0.005));   // есть требуемая загрузка в горизонте
+  let nh='';
+  if(!needs.length) nh='<div class="empty">Нет проектов без назначенного ресурса по выбранным компетенциям</div>';
+  else needs.forEach(r=>{
+    let strip='';
+    months.forEach(mi=>{ const v=monthLoad(r,mi),z=v<=0.005,left=(mi-startM)*100/months.length,wid=100/months.length;
+      strip+=`<div class="mload${z?' z':''}" style="left:${left}%;width:${wid}%;${z?'':'background:'+loadColor(v)}" title="${MONTHS[mi]}: ${fmtPct(v)}">${z?'':Math.round(v*100)}</div>`; });
+    nh+=`<div class="needrow">
+      <div class="needmeta"><div class="needname">${r.project} ${cabBadge(r.cab)}</div>
+        <div class="needsub"><span class="hmcomp">${r.competency}</span> · РП ${r.manager} · ${(vd(r.start)||vd(r.end))?fmtDate(r.start)+'→'+fmtDate(r.end):'без срока'}</div></div>
+      <div class="ptrack needtrack">${strip}</div></div>`;
+  });
+  document.getElementById('needRes').innerHTML=nh;
+}
+
+// ---- KPIs ----
+function renderKPI(rows){
+  const isAll=state.q==='all';
+  const lm=execLoadMap(rows.filter(r=>r.executor!=='Без назначения'));
+  const execs=Object.keys(lm);
+  const unassigned=rows.filter(r=>r.executor==='Без назначения')
+    .reduce((s,r)=>s+(isAll?(r.q1+r.q2+r.q3+r.q4)/4:(r[state.q]||0)),0);
+  const projs=new Set(rows.map(r=>r.project)).size;
+  const k=[
+    {v:projs,l:'Проектов в выборке',u:'активных направлений',cls:''},
+    {v:execs.length,l:'Занятых исполнителей',u:isAll?'за год':'в этом квартале',cls:''},
+    {v:unassigned>0?fmtPct(unassigned):'—',l:'Без назначения',u:isAll?'нужно распределить · за год':'нужно распределить',cls:unassigned>0?'warn':''},
+  ];
+  document.getElementById('kpis').innerHTML=k.map(x=>
+    `<div class="kpi ${x.cls}"><div class="v">${x.v}</div><div class="l">${x.l}</div><div class="u">${x.u}</div></div>`).join('');
+}
+
+// ---- heatmap (monthly) ----
+function monthLoad(r, mi){
+  if(!vd(r.start) || !vd(r.end)){ // нет дат — раскидываем квартальное значение по месяцам квартала
+    return r['q'+(Math.floor(mi/3)+1)]||0;
+  }
+  const ms=+new Date(2026,mi,1), me=+new Date(2026,mi+1,1); // [ms, me)
+  const s=+new Date(r.start), e=+new Date(r.end)+86400000;   // inclusive end day
+  const lo=Math.max(ms,s), hi=Math.min(me,e);
+  if(hi<=lo) return 0;
+  return (r.alloc||0)*((hi-lo)/(me-ms));
+}
+function zoneOf(v){ if(v<=0.005)return 'zero'; if(v<0.5)return 'low'; if(v<0.85)return 'mid'; if(v<=1.001)return 'full'; if(v<=1.25)return 'high'; return 'over'; }
+function renderHeatmap(){
+  const raw=rawFiltered();
+  const byExec={};
+  raw.forEach(r=>{ if(!byExec[r.executor]) byExec[r.executor]={m:Array(12).fill(0),comps:new Set(),rows:[]};
+    for(let mi=0;mi<12;mi++) byExec[r.executor].m[mi]+=monthLoad(r,mi);
+    byExec[r.executor].comps.add(r.competency); byExec[r.executor].rows.push(r); });
+  const sum=v=>v.m.reduce((x,y)=>x+y,0);
+  let list=Object.entries(byExec).sort((a,b)=>sum(b[1])-sum(a[1]));
+  const zsel=state.zones;
+  const active=zsel.length>0;
+  if(active) list=list.filter(([n,v])=> v.m.some(val=> zsel.includes(zoneOf(val))) );
+  HM_LAST=list;
+  const zeroSel = active && zsel.includes('zero');
+  const cellCls=val=>{ let c='cell mcell'; if(val<=0.005)c+=' zero'; if(active && !zsel.includes(zoneOf(val)))c+=' dim'; return c; };
+  let h='<table class="hmtbl"><thead><tr><th class="rh">Исполнитель / компетенции</th>'+
+    MONTHS.map(m=>`<th class="mh">${m}</th>`).join('')+
+    '<th class="mh">Год<br><span style="color:var(--txt3)">сред.</span></th></tr></thead><tbody>';
+  list.forEach(([name,v],ri)=>{
+    const comps=[...v.comps].sort().map(c=>`<span class="hmcomp">${c}</span>`).join('');
+    const avg=sum(v)/12;
+    h+=`<tr><th class="rh"><div class="hmname">${name}</div><div class="hmcomps">${comps}</div></th>`+
+      v.m.map((val,mi)=>{
+        const z=val<=0.005;
+        if(z && zeroSel) return `<td><div class="cell mcell free" title="не занят">0</div></td>`;
+        const clickable = !z && name!=='Без назначения';
+        return `<td><div class="${cellCls(val)}${clickable?' clk':''}" style="background:${loadColor(val)}" title="${fmtPct(val)}${clickable?' · клик — разбивка по проектам':''}"${clickable?` onclick="openCellDrill(${ri},${mi})"`:''}>${z?'·':Math.round(val*100)}</div></td>`;}).join('')+
+      `<td><div class="${cellCls(avg).replace(' mcell','')}" style="background:${loadColor(avg)};opacity:.92">${avg<=0.005?'·':fmtPct(avg)}</div></td></tr>`;
+  });
+  h+='</tbody></table>';
+  document.getElementById('heatmap').innerHTML = list.length?h
+    : `<div class="empty">${active?'Нет исполнителей в выбранных зонах':'Нет данных по фильтрам'}</div>`;
+}
+
+// ---- legend ----
+const ZONES=[['low','<50% свободен','var(--c-low)'],['mid','50–85%','var(--c-mid)'],['full','85–100% оптимум','var(--c-full)'],['high','100–125% перегруз','var(--c-high)'],['over','>125% критично','var(--c-over)']];
+function legendHTML(){
+  return ZONES.map(([k,lbl,c])=>`<span><i class="sw" style="background:${c}"></i>${lbl.replace('<','&lt;').replace('>','&gt;')}</span>`).join('\n  ');
+}
+function heatLegend(){
+  const btn=(k,lbl,sw)=>{const on=state.zones.includes(k);
+    return `<button class="zbtn${on?' on':''}" data-zone="${k}">${sw}${lbl}</button>`;};
+  let out=ZONES.map(([k,lbl,c])=>btn(k,lbl.replace('<','&lt;').replace('>','&gt;'),`<i class="sw" style="background:${c}"></i>`)).join('');
+  out+=btn('zero','не занят (0%)',`<i class="sw" style="background:var(--c-zero)"></i>`);
+  if(state.zones.length) out+=`<button class="zbtn zclear" data-zone="__clear">× сброс фильтра</button>`;
+  return out;
+}
+function wireHeatLegend(){
+  document.querySelectorAll('#legendHM .zbtn').forEach(b=>{
+    b.onclick=()=>{
+      const z=b.dataset.zone;
+      if(z==='__clear'){ state.zones=[]; }
+      else { const i=state.zones.indexOf(z); if(i<0)state.zones.push(z); else state.zones.splice(i,1); }
+      render();
+    };
+  });
+}
+
+// ---- executor bars ----
+function renderExecBars(rows){
+  const isAll=state.q==='all';
+  const lm=execLoadMap(rows);
+  const list=Object.entries(lm).filter(([n,d])=>d.total>0||d.peak>0).sort((a,b)=>b[1].total-a[1].total);
+  const el=document.getElementById('execBars');
+  if(!list.length){el.innerHTML='<div class="empty">Нет загрузки по выбранным фильтрам</div>';return;}
+  const maxScale=Math.max(1.25, ...list.map(x=>x[1].total));
+  el.innerHTML=list.map(([name,d],i)=>{
+    const w=Math.min(100, d.total/maxScale*100);
+    const capPos=1/maxScale*100;
+    const col=loadColor(d.total);
+    const tval=t=> isAll ? (t.q1+t.q2+t.q3+t.q4)/4 : (t[state.q]||0);
+    const tasks=d.tasks.sort((a,b)=>tval(b)-tval(a)).map(t=>{
+      const st=statusOf(t);
+      return `<div class="dtask"><div class="dp" title="${t.project}">${t.project}</div>
+        <div class="dc">${t.competency}</div>
+        <div class="dd">${st.short}</div>
+        <div class="dl" style="color:${loadColor(tval(t))}">${fmtPct(tval(t))}</div></div>`;
+    }).join('');
+    const strip=isAll?`<div class="qstrip">${QS.map(([k,l])=>
+      `<i style="background:${loadColor(d[k])}" title="${l}: ${fmtPct(d[k])}"></i>`).join('')}</div>`:'';
+    return `<div class="barrow" onclick="this.classList.toggle('open')" id="ex${i}">
+        <div class="nm"><span class="car">▶</span><div style="overflow:hidden"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>${strip}</div></div>
+        <div class="track"><div class="fill" style="width:${w}%;background:${col}"></div><div class="cap" style="left:${capPos}%"></div></div>
+        <div class="pct" style="color:${col}">${fmtPct(d.total)}${isAll?'<div style="font-size:9px;color:var(--txt3);font-weight:400">сред/год</div>':''}</div>
+      </div><div class="detail">${tasks}</div>`;
+  }).join('');
+}
+
+function renderTopOver(rows){
+  const isAll=state.q==='all';
+  const lm=execLoadMap(rows.filter(r=>r.executor!=='Без назначения'));
+  const list=Object.entries(lm).filter(([n,d])=> isAll ? d.peak>1.001 : d.total>1.001)
+    .sort((a,b)=> isAll ? b[1].peak-a[1].peak : b[1].total-a[1].total);
+  const el=document.getElementById('topOver');
+  document.getElementById('topQ').textContent=isAll?'весь 2026 (пиковый квартал)':QS.find(x=>x[0]===state.q)[1]+' 2026';
+  if(!list.length){el.innerHTML='<div class="empty" style="padding:24px">✓ Перегруженных исполнителей нет</div>';return;}
+  const vals=list.map(x=>isAll?x[1].peak:x[1].total);
+  const maxScale=Math.max(...vals);
+  el.innerHTML=list.map(([name,d])=>{
+    const val=isAll?d.peak:d.total;
+    const w=val/maxScale*100, capPos=1/maxScale*100, col=loadColor(val);
+    return `<div class="barrow" style="cursor:default">
+      <div class="nm">${name}${isAll?` <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">${d.peakQ}</span>`:''}</div>
+      <div class="track"><div class="fill" style="width:${w}%;background:${col}"></div><div class="cap" style="left:${capPos}%"></div></div>
+      <div class="pct" style="color:${col}">${fmtPct(val)}</div></div>`;
+  }).join('');
+}
+
+// ---- status ----
+function statusOf(r){
+  if(!vd(r.start) || !vd(r.end)) return {cls:'done',label:'Без срока',short:'—'};
+  const end=new Date(r.end), start=new Date(r.start);
+  const days=(end-TODAY)/86400000;
+  if(TODAY<start) return {cls:'plan',label:'Запланирован',short:'старт '+fmtDate(r.start)};
+  if(days<0) return {cls:'done',label:'Срок прошёл',short:'до '+fmtDate(r.end)};
+  if(days<=30) return {cls:'soon',label:'Скоро дедлайн',short:'до '+fmtDate(r.end)};
+  return {cls:'run',label:'В работе',short:'до '+fmtDate(r.end)};
+}
+
+// ---- plan: projects + timeline merged ----
+function planVal(t){return state.q==='all' ? (t.q1+t.q2+t.q3+t.q4)/4 : (t[state.q]||0);}
+
+function renderPlan(rows){
+  const Y0=+new Date('2026-01-01'), Y1=+new Date('2026-12-31'), SPAN=Y1-Y0;
+  const pos=d=>Math.max(0,Math.min(100,(+new Date(d)-Y0)/SPAN*100));
+  const todayPos=(+TODAY-Y0)/SPAN*100;
+  const byExec=state.ganttBy==='executor';
+  const ftelbl=state.q==='all'?'сред/год':QS.find(x=>x[0]===state.q)[1];
+
+  // group
+  const G={};
+  rows.forEach(r=>{ const key=byExec?r.executor:r.project;
+    if(!G[key]) G[key]={rows:[],comps:new Set(),mgrs:new Set(),min:'',max:''};
+    const g=G[key]; g.rows.push(r); g.comps.add(r.competency); g.mgrs.add(r.manager);
+    if(vd(r.start) && (!vd(g.min)||r.start<g.min)) g.min=r.start;
+    if(vd(r.end) && (!vd(g.max)||r.end>g.max)) g.max=r.end; });
+
+  const groupLoad=k=>G[k].rows.reduce((s,r)=>s+planVal(r),0);
+  const SORTS = byExec
+    ? [['load','по загрузке'],['name','по имени'],['deadline','по дедлайну']]
+    : [['start','по старту'],['deadline','по дедлайну'],['load','по загрузке'],['status','по статусу']];
+  let sortKey = SORTS.some(s=>s[0]===state.sort) ? state.sort : SORTS[0][0];
+  const stRank={over:0,soon:1,run:2,plan:3,done:4};
+  const dnum=(k,which)=>{ const d=G[k][which]; return vd(d)?+new Date(d):Infinity; };
+  const cmp={
+    load:(a,b)=>groupLoad(b)-groupLoad(a),
+    start:(a,b)=>dnum(a,'min')-dnum(b,'min'),
+    deadline:(a,b)=>dnum(a,'max')-dnum(b,'max'),
+    name:(a,b)=>a.localeCompare(b,'ru'),
+    status:(a,b)=>stRank[statusOf({start:G[a].min,end:G[a].max}).cls]-stRank[statusOf({start:G[b].min,end:G[b].max}).cls] || dnum(a,'max')-dnum(b,'max')
+  }[sortKey];
+  const keys=Object.keys(G).sort(cmp);
+  const capScale = byExec ? Math.max(1.25, ...keys.map(groupLoad)) : 1.25;
+  DRILL=[];
+
+  function dlMarker(end,col){return vd(end)?`<div class="dl" style="left:${pos(end)}%;background:${col}"></div>`:'';}
+  function daysLabel(maxEnd){
+    if(!vd(maxEnd)) return '';
+    const d=Math.round((+new Date(maxEnd)-(+TODAY))/86400000);
+    if(d<0) return `<span class="days" style="color:var(--txt3)">−${-d} дн</span>`;
+    if(d<=30) return `<span class="days" style="color:var(--c-high)">${d} дн до срока</span>`;
+    return `<span class="days" style="color:var(--txt2)">${d} дн</span>`;
+  }
+
+  // build one task bar (thin) for sub-rows
+  function taskBar(t){
+    const v=planVal(t);
+    if(!vd(t.start) || !vd(t.end))
+      return `<div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>
+        <div class="nobar">без срока</div></div>`;
+    const l=pos(t.start), w=Math.max(1.2,pos(t.end)-l);
+    const col=MGR_COLORS[t.manager]||'#888';
+    const showTxt=w>14;
+    return `<div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>
+      <div class="pbar" style="left:${l}%;width:${w}%;background:${col}99" title="${t.project} · ${t.executor} · ${fmtDate(t.start)}–${fmtDate(t.end)} · ${t.competency} · загрузка ${ftelbl}: ${fmtPct(v)}">
+        <div class="pfill" style="width:100%;background:${col}"></div>${showTxt?'<span>'+fmtDate(t.end)+'</span>':''}</div>
+      ${dlMarker(t.end, v>0&&(+new Date(t.end)-(+TODAY))/86400000<=30?'var(--c-over)':'var(--txt2)')}</div>`;
+  }
+
+  function monthStripCells(rowsArr){
+    let cells='';
+    for(let mi=0;mi<12;mi++){
+      let v=0; rowsArr.forEach(r=>v+=monthLoad(r,mi));
+      const z=v<=0.005, left=mi*100/12, wid=100/12;
+      cells+=`<div class="mload${z?' z':''}" style="left:${left}%;width:${wid}%;${z?'':'background:'+loadColor(v)}" title="${MONTHS[mi]}: ${fmtPct(v)}">${z?'':Math.round(v*100)}</div>`;
+    }
+    return cells;
+  }
+
+  let h=`<div class="planhdr"><div class="hl">${byExec?'Исполнитель / проекты':'Проект / исполнители'}</div>
+    <div class="gmlabels">${MONTHS.map(m=>`<span>${m}</span>`).join('')}</div></div>`;
+
+  keys.forEach(key=>{
+    const g=G[key];
+    const gi=DRILL.push({byExec,key,g})-1;
+    // aggregate load for the group (sum of planVal over its rows; for project = team load, for exec = personal load)
+    const totV=g.rows.reduce((s,r)=>s+planVal(r),0);
+    const st=statusOf({start:g.min,end:g.max});
+    const hasDates=vd(g.min)&&vd(g.max);
+    const l=hasDates?pos(g.min):0, w=hasDates?Math.max(1.2,pos(g.max)-l):0;
+    const progFrac=hasDates?Math.max(0,Math.min(1,((+TODAY)-(+new Date(g.min)))/((+new Date(g.max))-(+new Date(g.min))||1))):0;
+    const headCol = g.mgrs.size===1 ? (MGR_COLORS[[...g.mgrs][0]]||'#888') : 'var(--accent)';
+    const summaryBar = byExec
+      ? // executor head: monthly total-load strip (цвет = загрузка, подпись = %)
+        monthStripCells(g.rows)
+      : // project head: single span bar with schedule-progress fill + deadline marker
+        (hasDates
+          ? `<div class="pbar proj" style="left:${l}%;width:${w}%;background:${headCol}55" title="${key} · ${fmtDate(g.min)}–${fmtDate(g.max)} · прогресс по сроку ${Math.round(progFrac*100)}%">
+               <div class="pfill" style="width:${progFrac*100}%;background:${headCol}"></div><span>${fmtDate(g.max)}</span></div>
+             ${dlMarker(g.max, st.cls==='soon'||st.cls==='over'?'var(--c-over)':'var(--txt2)')}`
+          : `<div class="nobar">без срока</div>`);
+
+    let leftHTML;
+    if(byExec){
+      const capW=Math.min(100, totV/capScale*100), capPos=1/capScale*100, capCol=loadColor(totV);
+      const qstrip = state.q==='all'
+        ? `<div class="qstrip">${QS.map(([k,l])=>{const qv=g.rows.reduce((s,r)=>s+(r[k]||0),0);
+            return `<i style="background:${loadColor(qv)}" title="${l}: ${fmtPct(qv)}"></i>`;}).join('')}</div>`
+        : '';
+      leftHTML=`<div class="pleft">
+        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${key}" onclick="event.stopPropagation();openDrill(${gi})">${key}</span>
+          <span class="loadpill" style="background:${capCol}">${fmtPct(totV)}</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${state.q==='all'?'сред/год':QS.find(x=>x[0]===state.q)[1]}</span></div>
+        <div class="capmini"><div class="track"><div class="fill" style="width:${capW}%;background:${capCol}"></div><div class="cap" style="left:${capPos}%"></div></div></div>
+        <div class="pbot"><span>${g.rows.length} зад.</span><span class="sep">·</span><span>${g.mgrs.size} рук.</span><span class="sep">·</span><span class="compsm">${[...g.comps].sort().join(' ')}</span></div>
+        ${qstrip}</div>`;
+    } else {
+      leftHTML=`<div class="pleft">
+        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${key}" onclick="event.stopPropagation();openDrill(${gi})">${key}</span>
+          <span class="statusbadge sb-${st.cls}">${st.label}</span>${cabBadge(cabOf(g.rows))}</div>
+        <div class="pbot"><span>${fmtDate(g.min)}→${fmtDate(g.max)}</span>${daysLabel(g.max)}
+          <span class="sep">·</span><span>РП ${[...g.mgrs].join(', ')}</span>
+          <span class="sep">·</span><span>${new Set(g.rows.map(r=>r.executor)).size} исп.</span></div>
+      </div>`;
+    }
+
+    h+=`<div class="pgroup">
+      <div class="prow head" onclick="this.closest('.pgroup').classList.toggle('open')">
+        ${leftHTML}
+        <div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${summaryBar}</div>
+      </div>
+      <div class="psub">`;
+
+    // sub rows
+    if(byExec){
+      // в режиме «По исполнителям» — разбивка по задачам (полосы по проектам)
+      const subs = g.rows.slice().sort((a,b)=> (+new Date(a.start)-+new Date(b.start)) );
+      subs.forEach(t=>{
+        const v=planVal(t);
+        h+=`<div class="prow sub">
+          <div class="pleft"><div class="ptop"><span class="nm" title="${t.project}">${t.project}</span>
+            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span></div>
+            <div class="pbot"><span class="compsm">${t.competency}</span><span class="sep">·</span><span>${fmtDate(t.start)}→${fmtDate(t.end)}</span></div></div>
+          ${taskBar(t)}</div>`;
+      });
+    } else {
+      // в режиме «По проектам» — 1 строка на исполнителя, помесячная полоса загрузки на этом проекте
+      const byEx={};
+      g.rows.forEach(r=>{ (byEx[r.executor]=byEx[r.executor]||[]).push(r); });
+      const exKeys=Object.keys(byEx).sort((a,b)=>
+        byEx[b].reduce((s,r)=>s+planVal(r),0) - byEx[a].reduce((s,r)=>s+planVal(r),0));
+      exKeys.forEach(ex=>{
+        const ers=byEx[ex];
+        const v=ers.reduce((s,r)=>s+planVal(r),0);
+        const comps=[...new Set(ers.map(r=>r.competency))].sort().join(' ');
+        let mn='',mx='';
+        ers.forEach(r=>{ if(vd(r.start)&&(!vd(mn)||r.start<mn))mn=r.start; if(vd(r.end)&&(!vd(mx)||r.end>mx))mx=r.end; });
+        const span=(vd(mn)||vd(mx))?(fmtDate(mn)+'→'+fmtDate(mx)):'без срока';
+        const nzad=ers.length>1?` <span class="sep">·</span><span>${ers.length} зад.</span>`:'';
+        h+=`<div class="prow sub">
+          <div class="pleft"><div class="ptop"><span class="nm" title="${ex}">${ex}</span>
+            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span></div>
+            <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nzad}</div></div>
+          <div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${monthStripCells(ers)}</div></div>`;
+      });
+    }
+    h+=`</div></div>`;
+  });
+
+  const el=document.getElementById('planTbl');
+  el.innerHTML = keys.length? h : '<div class="empty">Нет данных по выбранным фильтрам</div>';
+  document.getElementById('planCount').textContent = keys.length+(byExec?' исполнителей':' проектов');
+  document.querySelectorAll('.gtbtn').forEach(b=>{
+    b.classList.toggle('on', b.dataset.g===state.ganttBy);
+    b.onclick=()=>{state.ganttBy=b.dataset.g; renderPlan(filtered());};
+  });
+  const sel=document.getElementById('planSort');
+  sel.innerHTML=SORTS.map(([v,l])=>`<option value="${v}"${v===sortKey?' selected':''}>${l}</option>`).join('');
+  sel.onchange=()=>{ state.sort=sel.value; renderPlan(filtered()); };
+}
+
+// ---- BA load (half-month matrix) ----
+function renderBA(){
+  const ax=BA.axis;
+  let h='';
+  BA.people.filter(p=>p.person!=='Комина').forEach(p=>{
+    const totVals=ax.map(a=>p.total[a.key]).filter(v=>v!=null);
+    const avg=totVals.length?totVals.reduce((a,b)=>a+b,0)/totVals.length:0;
+    let peak=0,peakLbl='';
+    ax.forEach(a=>{const v=p.total[a.key]||0; if(v>peak){peak=v;peakLbl=a.lbl;}});
+    h+=`<div class="panel baperson"><h2>${p.person}
+      <span class="basum">сред ${fmtPct(avg)} · пик ${fmtPct(peak)}${peakLbl?' ('+peakLbl+')':''} · ${p.tasks.length} задач</span></h2>
+      <div class="hm"><table class="hmtbl"><thead><tr><th class="rh">Задача</th>`+
+      ax.map(a=>`<th class="mh">${a.lbl.replace(' ','<br>')}</th>`).join('')+`</tr></thead><tbody>`;
+    p.tasks.forEach(t=>{
+      h+=`<tr><th class="rh"><div class="hmname">${t.project}</div>${t.ticket?`<div class="hmcomps"><span class="hmcomp">${t.ticket}</span></div>`:''}</th>`+
+        ax.map(a=>{const v=t.loads[a.key]; const z=v==null;
+          return `<td><div class="cell mcell ${z?'zero':''}" style="background:${z?'':loadColor(v)}" title="${a.lbl}: ${z?'—':fmtPct(v)}">${z?'·':Math.round(v*100)}</div></td>`;}).join('')+`</tr>`;
+    });
+    h+=`<tr class="batotal"><th class="rh">Итого</th>`+
+      ax.map(a=>{const v=p.total[a.key]; const z=v==null;
+        return `<td><div class="cell mcell ${z?'zero':''}" style="background:${z?'':loadColor(v)}" title="${a.lbl}: ${z?'—':fmtPct(v)}">${z?'·':Math.round(v*100)}</div></td>`;}).join('')+`</tr>`;
+    h+=`</tbody></table></div></div>`;
+  });
+  document.getElementById('baWrap').innerHTML = h || '<div class="empty">Нет данных БА</div>';
+}
+
+// ---- drill-down modal ----
+let DRILL=[];
+let HM_LAST=[];
+function openCellDrill(ri, mi){
+  const entry=HM_LAST[ri]; if(!entry) return;
+  const name=entry[0], v=entry[1];
+  if(name==='Без назначения') return;
+  const items=v.rows.map(r=>({r, load:monthLoad(r,mi)})).filter(o=>o.load>0.005).sort((a,b)=>b.load-a.load);
+  if(!items.length) return;
+  const total=items.reduce((s,o)=>s+o.load,0);
+  const card=`
+    <button class="mclose" onclick="closeDrill()">✕</button>
+    <div class="mtitle">${name} · ${MONTHS[mi]}</div>
+    <div class="mtags"><span class="tagc" style="background:${loadColor(total)};color:#06140f;font-weight:700">${Math.round(total*100)}% загрузка</span>${[...v.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')}</div>
+    <div class="msec">Проекты в этом месяце · ${items.length}</div>
+    ${items.map(o=>`<div class="mrow">
+        <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
+          <div class="sub2">${o.r.competency}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
+        <span class="loadpill" style="background:${loadColor(o.load)}">${Math.round(o.load*100)}%</span>
+      </div>`).join('')}
+  `;
+  document.getElementById('drillCard').innerHTML=card;
+  document.getElementById('drill').hidden=false;
+}
+function qchips(sumsObj){
+  return `<div class="mq">${QS.map(([k,l])=>{const v=sumsObj[k]||0;
+    return `<span class="mqc" style="background:${loadColor(v)}"><span class="qn">${l}</span>${v>0?fmtPct(v):'·'}</span>`;}).join('')}</div>`;
+}
+function openDrill(idx){
+  const d=DRILL[idx]; if(!d) return;
+  const {byExec,key,g}=d;
+  const sums={q1:0,q2:0,q3:0,q4:0};
+  g.rows.forEach(r=>QS.forEach(([k])=>sums[k]+=r[k]||0));
+  const st=statusOf({start:g.min,end:g.max});
+  const period = (vd(g.min)||vd(g.max)) ? (fmtDate(g.min)+' → '+fmtDate(g.max)) : 'без срока';
+  const dleft = vd(g.max) ? Math.round((+new Date(g.max)-(+TODAY))/86400000) : null;
+  const dl = dleft==null ? '—' : (dleft<0?('просрочен '+(-dleft)+' дн'):(dleft+' дн'));
+  // members grouped
+  const memMap={};
+  g.rows.forEach(r=>{ const mk=byExec?r.project:r.executor;
+    if(!memMap[mk]) memMap[mk]={q1:0,q2:0,q3:0,q4:0,comps:new Set(),min:'',max:''};
+    const m=memMap[mk]; QS.forEach(([k])=>m[k]+=r[k]||0); m.comps.add(r.competency);
+    if(vd(r.start)&&(!vd(m.min)||r.start<m.min))m.min=r.start;
+    if(vd(r.end)&&(!vd(m.max)||r.end>m.max))m.max=r.end; });
+  const members=Object.entries(memMap).sort((a,b)=>(b[1].q1+b[1].q2+b[1].q3+b[1].q4)-(a[1].q1+a[1].q2+a[1].q3+a[1].q4));
+  const tags = byExec
+    ? `<span class="statusbadge sb-${st.cls}">${st.label}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
+    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')+cabBadge(cabOf(g.rows));
+  const card=`
+    <button class="mclose" onclick="closeDrill()">✕</button>
+    <div class="mtitle">${key}</div>
+    <div class="mtags">${tags}</div>
+    <div class="mstat">
+      <div class="b"><div class="v">${period==='без срока'?'—':period}</div><div class="l">Период</div></div>
+      <div class="b"><div class="v" style="color:${st.cls==='over'||st.cls==='soon'?'var(--c-over)':'var(--txt)'}">${dl}</div><div class="l">До дедлайна</div></div>
+      <div class="b"><div class="v">${members.length}</div><div class="l">${byExec?'проектов':'исполнителей'}</div></div>
+    </div>
+    <div class="msec">Загрузка по кварталам (сумма)</div>
+    ${qchips(sums)}
+    <div class="msec" style="margin-top:14px">${byExec?'Проекты исполнителя':'Команда проекта'}</div>
+    ${members.map(([mk,m])=>`<div class="mrow">
+        <div><div class="who">${mk}</div><div class="sub2">${[...m.comps].sort().join(' · ')}${(vd(m.min)||vd(m.max))?' · '+fmtDate(m.min)+'→'+fmtDate(m.max):''}</div></div>
+        ${qchips(m)}
+      </div>`).join('')}
+  `;
+  document.getElementById('drillCard').innerHTML=card;
+  document.getElementById('drill').hidden=false;
+}
+function closeDrill(){ document.getElementById('drill').hidden=true; }
+
+// ---- theme ----
+function applyTheme(){
+  document.body.classList.toggle('dark', state.theme==='dark');
+  document.getElementById('themeBtn').textContent = state.theme==='dark' ? '☀️' : '🌙';
+}
+
+// ---- master render ----
+function render(){
+  buildTabs();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('v-'+state.view).classList.add('on');
+  const rows=filtered();
+  const isBA = state.view==='ba';
+  document.querySelector('.filters').style.display = isBA?'none':'';
+  document.getElementById('legendHM').innerHTML=heatLegend();
+  wireHeatLegend();
+  if(isBA) document.getElementById('legendBA').innerHTML=legendHTML();
+  if(state.view==='over'){renderKPI(rows);renderHeatmap();
+    const hz=[['future','С текущего месяца'],['year','Весь год']];
+    document.getElementById('planHzPills').innerHTML=hz.map(([k,l])=>`<button class="qpill${state.planHorizon===k?' on':''}" data-hz="${k}">${l}</button>`).join('');
+    document.querySelectorAll('#planHzPills .qpill').forEach(b=>b.onclick=()=>{state.planHorizon=b.dataset.hz;render();});
+    document.getElementById('planCompFilter').innerHTML=planCompLegend(); wirePlanCompLegend(); renderPlanning();}
+  if(state.view==='plan'){renderPlan(rows);}
+  if(isBA){renderBA();}
+}
+buildFilters();render();
+
+// ---- live data from Google Sheets (published CSV) ----
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSDHUAox0LHpdGRUCLFBJTa5srE252_WlqTqxiak_yB7llEogAP5yawo0QtM9kri_LLynzl5CQZ-4Y2/pub?output=csv";
+
+function parseCSV(text){
+  text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const rows=[]; let row=[], field='', inQ=false, i=0;
+  while(i<text.length){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;continue;} inQ=false;i++;continue; }
+      field+=c;i++;continue;
+    }
+    if(c==='"'){inQ=true;i++;continue;}
+    if(c===','){row.push(field);field='';i++;continue;}
+    if(c==='\n'){row.push(field);rows.push(row);row=[];field='';i++;continue;}
+    field+=c;i++;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function buildFromCSV(text){
+  const rows=parseCSV(text).filter(r=>r.some(c=>c&&c.trim()!==''));
+  if(!rows.length) throw new Error('пустой ответ');
+  let hi=0;
+  for(let k=0;k<Math.min(6,rows.length);k++){
+    const low=rows[k].map(x=>(x||'').toLowerCase());
+    if(low.some(x=>x.includes('исполн')) && low.some(x=>x.includes('назв'))){hi=k;break;}
+  }
+  const headers=rows[hi].map(x=>(x||'').toLowerCase().trim());
+  const find=(...keys)=>headers.findIndex(hd=>keys.some(k=>hd.includes(k)));
+  const idx={
+    project: headers.findIndex(hd=>hd.includes('назв') && !hd.includes('cab')),
+    competency:find('компетен'),manager:find('руководит'),
+    executor:find('ресурс','исполн'),start:find('начал'),end:find('оконч','срок'),alloc:find('выдел'),
+    cab: headers.findIndex(hd=>hd.includes('номер') && hd.includes('cab')),
+    q1:find('q1'),q2:find('q2'),q3:find('q3'),q4:find('q4')};
+  if(idx.project<0) idx.project=find('назв');
+  if(idx.project<0||idx.executor<0) throw new Error('не нашёл колонки «Название проекта»/«Ресурс»');
+  const num=v=>{ let s=(''+(v==null?'':v)).trim(); if(s==='')return 0; const pct=s.includes('%'); s=s.replace('%','').replace(/\s/g,'').replace(',','.'); let n=parseFloat(s); if(isNaN(n))return 0; if(pct)n/=100; return n; };
+  const dt=v=>{ v=(''+(v==null?'':v)).trim(); if(!v)return '';
+    const m=v.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+    if(m){let d=m[1],mo=m[2],y=m[3]; if(y.length===2)y='20'+y; return y+'-'+('0'+mo).slice(-2)+'-'+('0'+d).slice(-2);}
+    const dd=new Date(v); return isNaN(+dd)?'':dd.toISOString().slice(0,10); };
+  const g=(r,i)=> (i>=0 && i<r.length) ? r[i] : '';
+  const recs=[];
+  for(let k=hi+1;k<rows.length;k++){
+    const r=rows[k];
+    const project=(g(r,idx.project)||'').trim();
+    const q1=num(g(r,idx.q1)),q2=num(g(r,idx.q2)),q3=num(g(r,idx.q3)),q4=num(g(r,idx.q4));
+    const executor=(g(r,idx.executor)||'').trim()||'Без назначения';
+    if(!project && !q1 && !q2 && !q3 && !q4 && executor==='Без назначения') continue;
+    recs.push({project:project||'—',competency:(g(r,idx.competency)||'').trim()||'—',
+      manager:(g(r,idx.manager)||'').trim()||'—',executor,
+      cab:(function(){const c=idx.cab>=0?(g(r,idx.cab)||'').trim():''; return /^https?:\/\//i.test(c)?c:'';})(),
+      start:dt(g(r,idx.start)),end:dt(g(r,idx.end)),alloc:num(g(r,idx.alloc)),q1,q2,q3,q4});
+  }
+  if(!recs.length) throw new Error('строки не распознаны');
+  return recs;
+}
+function setStatus(cls,txt){ document.getElementById('dataStatus').innerHTML='<span class="dot '+cls+'"></span>'+txt; }
+function applyData(records){
+  ROWS=mergeRows(records);
+  buildFilters();
+  document.getElementById('fSearch').value=state.search;
+  render();
+}
+function loadLive(){
+  const btn=document.getElementById('refreshBtn'); btn.disabled=true;
+  setStatus('load','загрузка данных…');
+  fetch(CSV_URL,{cache:'no-store'})
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(text=>{ const recs=buildFromCSV(text); applyData(recs);
+      const t=new Date(),hh=('0'+t.getHours()).slice(-2),mm=('0'+t.getMinutes()).slice(-2);
+      setStatus('live','онлайн · '+recs.length+' строк · обновлено '+hh+':'+mm); })
+    .catch(e=>{
+      let msg=e.message||'нет связи';
+      if(location.protocol==='file:') msg='открыт как файл (file://) — браузер блокирует загрузку. Откройте через http (локальный сервер) или после публикации';
+      else if(/fetch/i.test(msg)) msg='нет доступа к таблице (CORS/сеть). Проверьте, что лист «Опубликован в интернете» как CSV';
+      setStatus('off','оффлайн-снимок · '+msg);
+    })
+    .finally(()=>{ btn.disabled=false; });
+}
+document.getElementById('refreshBtn').onclick=loadLive;
+document.getElementById('themeBtn').onclick=()=>{ state.theme = state.theme==='dark'?'light':'dark'; applyTheme(); };
+document.getElementById('drillBg').onclick=closeDrill;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrill(); document.querySelectorAll('.msel.open').forEach(x=>x.classList.remove('open')); } });
+document.addEventListener('click',e=>{ if(!e.target.closest('.msel')) document.querySelectorAll('.msel.open').forEach(x=>x.classList.remove('open')); });
+applyTheme();
+setStatus('off','встроенный снимок · нажмите «Обновить» для синхронизации');
+loadLive();
+</script>
+</body>
+</html>
