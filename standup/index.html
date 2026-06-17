@@ -9,7 +9,7 @@
   --bg:#eef2f6; --panel:#fff; --panel2:#f6f9fc; --line:#e7eef5; --line2:#d6e0ec;
   --txt:#1d3454; --txt2:#5b6b82; --txt3:#9aa7b8;
   --accent:#6cb33a; --accent-d:#4f8f28;
-  --done:#6cb33a; --wip:#5b8fc7; --fail:#e0533d; --moved:#e0993d;
+  --done:#6cb33a; --wip:#5b8fc7; --fail:#e0533d; --moved:#e0993d; --block:#8b5cf6;
   --vac:#5b8fc7; --sick:#e0993d;
   --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -113,9 +113,34 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 .st-wip{background:var(--wip);border-color:var(--wip);color:#fff}
 .st-fail{background:var(--fail);border-color:var(--fail);color:#fff}
 .st-moved{background:var(--moved);border-color:var(--moved);color:#fff}
+.st-blocked{background:var(--block);border-color:var(--block);color:#fff}
 .ttext{flex:1;font-size:13.5px;word-break:break-word;padding-top:2px}
 .task.done .ttext{text-decoration:line-through;color:var(--txt3)}
 .task.moved .ttext{color:var(--txt2);font-style:italic}
+.task.blocked .ttext{color:var(--block);font-weight:600}
+
+/* blocker panel */
+.blockpanel{background:rgba(139,92,246,.07);border:1px solid var(--block);border-radius:14px;
+  padding:12px 16px 13px;margin-bottom:18px;display:none}
+.blockpanel.show{display:block}
+.blockpanel h3{margin:0 0 8px;font-size:13.5px;font-weight:700;color:var(--block);display:flex;align-items:center;gap:7px}
+.blockpanel ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.blockpanel li{font-size:13px;display:flex;gap:8px;align-items:flex-start}
+.blockpanel .bp-who{font-weight:700;flex:none;min-width:120px}
+.blockpanel .bp-task{color:var(--txt);word-break:break-word}
+
+/* team summary (manager) */
+.team-row{display:grid;grid-template-columns:150px 1fr auto auto;gap:12px;align-items:center;
+  padding:7px 0;border-top:1px solid var(--line)}
+.team-row:first-of-type{border-top:none}
+.team-name{font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:7px;min-width:0}
+.team-name .ds-mini{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;
+  padding:2px 6px;border-radius:20px}
+.team-pbar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;display:flex}
+.team-pbar i{height:100%}
+.team-num{font-family:var(--mono);font-size:12px;color:var(--txt2);white-space:nowrap}
+.team-blk{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--block)}
+.team-blk.zero{color:var(--txt3)}
 .tdel{flex:none;opacity:0;color:var(--txt3);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;border-radius:5px}
 .task:hover .tdel{opacity:1}
 .tdel:hover{color:var(--fail);background:var(--panel)}
@@ -199,6 +224,8 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 
   <div class="weekpanel" id="weekpanel"></div>
 
+  <div class="blockpanel" id="blockpanel"></div>
+
   <div id="board" class="board"></div>
 
   <div class="section-h">Архив по дням <span class="line"></span></div>
@@ -220,9 +247,10 @@ const CONFIG = {
 const POLL_MS = 25000;             // как часто подтягивать чужие правки (мс)
 
 const PEOPLE = ['Иракли Бурдули','Павел Шакиров','Олег Саушкин','Илья Троян','Светлана Климова','Валентина Куренная'];
-const ST = ['wip','done','fail','moved'];
-const ST_ICON = {wip:'⏳',done:'✓',fail:'✕',moved:'→'};
-const ST_LABEL = {wip:'в работе',done:'выполнено',fail:'не сделано',moved:'перенесено'};
+const MANAGER = 'Руководитель';   // спец-режим: наблюдатель + сводка команды
+const ST = ['wip','done','fail','moved','blocked'];
+const ST_ICON = {wip:'⏳',done:'✓',fail:'✕',moved:'→',blocked:'🚧'};
+const ST_LABEL = {wip:'в работе',done:'выполнено',fail:'не сделано',moved:'перенесено',blocked:'заблокировано'};
 const DS = ['work','vacation','sick'];
 const DS_LABEL = {work:'работаю',vacation:'отпуск',sick:'болею'};
 const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
@@ -354,7 +382,7 @@ async function pollRefresh(force){
   }catch(e){ setSync('error'); }
 }
 
-function loadMe(){ try{ const v=localStorage.getItem('standup_me'); if(v&&PEOPLE.includes(v)) me=v; }catch(e){} }
+function loadMe(){ try{ const v=localStorage.getItem('standup_me'); if(v && (PEOPLE.includes(v) || v===MANAGER)) me=v; }catch(e){} }
 function saveMe(){ try{ localStorage.setItem('standup_me', me); }catch(e){} }
 
 // ---------- индикатор синхронизации ----------
@@ -503,8 +531,10 @@ function renderArchive(){
     });
   });
 }
+function isManager(){ return me === MANAGER; }
 function renderWeek(){
   const el = document.getElementById('weekpanel'); if(!el) return;
+  if(isManager()){ renderTeamSummary(el); return; }
   const start = weekStart(cur);
   const days = []; for(let i=0;i<7;i++) days.push(addDays(start,i));
   let done=0, wip=0, fail=0, moved=0, total=0;
@@ -555,10 +585,69 @@ function renderWeek(){
     d.onclick=()=>{ cur=d.dataset.day; renderAll(); };
   });
 }
-function renderAll(){ renderWeek(); renderBoard(); renderArchive(); }
+// сводка команды за неделю (режим руководителя)
+function renderTeamSummary(el){
+  const start = weekStart(cur);
+  const days = []; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  const range = fmtDate(start) + ' – ' + fmtDate(addDays(start,6));
+  let tDone=0, tTotal=0, tBlk=0;
+  const rows = PEOPLE.map(name=>{
+    let done=0, total=0, blocked=0;
+    days.forEach(iso=>{
+      const tasks = (cache[iso] && cache[iso].people[name] && cache[iso].people[name].tasks) || [];
+      tasks.forEach(t=>{ total++; if(t.st==='done')done++; if(t.st==='blocked')blocked++; });
+    });
+    tDone+=done; tTotal+=total; tBlk+=blocked;
+    // статус на просматриваемый день
+    const pCur = (cache[cur] && cache[cur].people[name]) || {status:'work'};
+    const dsBadge = (pCur.status && pCur.status!=='work')
+      ? `<span class="ds-mini ds-${pCur.status}">${DS_LABEL[pCur.status]}</span>` : '';
+    const pct = total ? Math.round(done/total*100) : 0;
+    const bar = total
+      ? `<div class="team-pbar"><i style="width:${pct}%;background:var(--done)"></i><i style="width:${100-pct}%;background:var(--wip);opacity:.45"></i></div>`
+      : `<div class="team-pbar"></div>`;
+    return `<div class="team-row">
+      <span class="team-name"><span class="ava" style="width:22px;height:22px;font-size:10px">${esc(initials(name))}</span>${esc(name.split(' ')[0])} ${dsBadge}</span>
+      ${bar}
+      <span class="team-num">${done}/${total}</span>
+      <span class="team-blk${blocked?'':' zero'}">🚧 ${blocked}</span>
+    </div>`;
+  }).join('');
+  const tPct = tTotal ? Math.round(tDone/tTotal*100) : 0;
+  el.innerHTML = `
+    <div class="wk-top">
+      <span class="wk-title">Сводка команды за неделю</span>
+      <span class="wk-range">${range}</span>
+      <span class="wk-pct"><b>${tPct}%</b> · ${tDone}/${tTotal}${tBlk?` · 🚧 ${tBlk}`:''}</span>
+    </div>
+    ${rows}`;
+}
+// панель блокеров за просматриваемый день (видна всем)
+function renderBlockers(){
+  const el = document.getElementById('blockpanel'); if(!el) return;
+  const day = cache[cur];
+  const items = [];
+  if(day && day.people){
+    PEOPLE.forEach(name=>{
+      const tasks = (day.people[name] && day.people[name].tasks) || [];
+      tasks.filter(t=>t.st==='blocked').forEach(t=>{
+        items.push(`<li><span class="bp-who">${esc(name.split(' ')[0])}</span><span class="bp-task">${esc(t.text)}</span></li>`);
+      });
+    });
+  }
+  if(!items.length){ el.classList.remove('show'); el.innerHTML=''; return; }
+  el.innerHTML = `<h3>🚧 Блокеры · ${fmtDate(cur)}</h3><ul>${items.join('')}</ul>`;
+  el.classList.add('show');
+}
+function renderAll(){
+  // режим руководителя: скрыть кнопку «Перенести невыполненные»
+  const cb = document.getElementById('carryBtn'); if(cb) cb.style.display = isManager() ? 'none' : '';
+  renderWeek(); renderBlockers(); renderBoard(); renderArchive();
+}
 
 // ---------- actions ----------
 async function carryOver(){
+  if(isManager()) return;
   const days = Object.keys(cache).filter(d=>d<cur).sort().reverse();
   let src=null;
   for(const d of days){ const t=dayOf(d).people[me].tasks||[]; if(t.some(x=>x.st!=='done')){ src=d; break; } }
@@ -581,7 +670,8 @@ function shiftDay(delta){
 // ---------- init ----------
 function buildMeSelect(){
   const sel=document.getElementById('meSel');
-  sel.innerHTML=PEOPLE.map(n=>`<option${n===me?' selected':''}>${esc(n)}</option>`).join('');
+  sel.innerHTML = PEOPLE.map(n=>`<option value="${esc(n)}"${n===me?' selected':''}>${esc(n)}</option>`).join('')
+    + `<option value="${MANAGER}"${me===MANAGER?' selected':''}>📊 Руководитель (сводка)</option>`;
   sel.onchange=()=>{ me=sel.value; saveMe(); renderAll(); };
 }
 function buildLegend(){
