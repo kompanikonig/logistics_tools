@@ -50,6 +50,36 @@ select:focus,input:focus{border-color:var(--accent)}
 .note-shared.busy{color:var(--wip)}
 .sync-btn{margin-left:auto}
 .sync-btn + .note-shared{margin-left:10px}
+input[type=date]{font-family:var(--body);font-size:13px;color:var(--txt);background:var(--panel);
+  border:1.5px solid var(--line2);border-radius:9px;padding:6px 9px;outline:none;cursor:pointer}
+input[type=date]:focus{border-color:var(--accent)}
+
+/* week panel */
+.weekpanel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  padding:13px 16px 14px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px}
+.wk-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wk-title{font-weight:700;font-size:14px}
+.wk-range{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px}
+.wk-pct{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--txt2)}
+.wk-pct b{color:var(--accent-d);font-size:14px}
+body.dark .wk-pct b{color:var(--accent)}
+.wk-pbar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;display:flex}
+.wk-pbar i{height:100%}
+.wk-stats{font-family:var(--mono);font-size:11.5px;color:var(--txt2);display:flex;gap:14px;flex-wrap:wrap}
+.wk-stats span{display:inline-flex;align-items:center;gap:5px}
+.wk-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:2px}
+.wk-day{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:6px 2px 5px;
+  border-radius:9px;border:1.5px solid transparent;transition:.12s}
+.wk-day:hover{background:var(--panel2);border-color:var(--line2)}
+.wk-day.cur{border-color:var(--accent);background:rgba(108,179,58,.08)}
+.wk-day.today .wk-dnum{color:var(--accent-d)}
+body.dark .wk-day.today .wk-dnum{color:var(--accent)}
+.wk-col{width:100%;height:42px;display:flex;flex-direction:column-reverse;border-radius:6px;
+  background:var(--line);overflow:hidden}
+.wk-col i{width:100%;display:block}
+.wk-dlabel{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase}
+.wk-dnum{font-size:11px;font-weight:700;color:var(--txt2)}
+.wk-empty{color:var(--txt3);font-size:12.5px}
 .cfgbar{display:none;align-items:center;gap:10px;background:rgba(224,153,61,.12);border:1px solid var(--moved);
   color:var(--moved);border-radius:11px;padding:9px 14px;margin-bottom:16px;font-size:12.5px}
 .cfgbar.show{display:flex}
@@ -156,14 +186,18 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
   <div class="legend" id="legend"></div>
 
   <div class="datebar">
-    <button class="btn icon" id="prevDay" title="Предыдущий день">‹</button>
+    <button class="btn icon" id="prevDay" title="Предыдущий день (←)">‹</button>
     <div><div class="dt" id="curDate">—</div><div class="dow" id="curDow"></div></div>
-    <button class="btn icon" id="nextDay" title="Следующий день">›</button>
+    <button class="btn icon" id="nextDay" title="Следующий день (→)">›</button>
     <button class="btn" id="todayBtn">Сегодня</button>
+    <button class="btn" id="yesterdayBtn">Вчера</button>
+    <input type="date" id="datePick" title="Перейти к дате">
     <button class="btn primary" id="carryBtn" title="Перенести мои невыполненные задачи с прошлого дня">↩ Перенести невыполненные</button>
     <button class="btn icon sync-btn" id="syncBtn" title="Обновить с сервера">⟳</button>
     <div class="note-shared" id="syncNote">общий доступ</div>
   </div>
+
+  <div class="weekpanel" id="weekpanel"></div>
 
   <div id="board" class="board"></div>
 
@@ -180,7 +214,7 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
    локально (данные только на этом устройстве).
    ============================================================ */
 const CONFIG = {
-  url:   'https://script.google.com/macros/s/AKfycbzebEgXzL8A0g0R3F1s8LMpmyhhp4ttjAToCwZ9YYZ6xLpq3xK3CK5rNcL8Lm-bZob1/exec',
+  url:   'https://script.google.com/macros/s/AKfycbz2muhBBw6zYZQ-6l9YoMBqzM7fU4QQJH0-hraDaxXY7XLolyp91xGcy9RNMZMaO1dF/exec',
   token: '3399ed4fe72da8865dba8cdfd72da25c'
 };
 const POLL_MS = 25000;             // как часто подтягивать чужие правки (мс)
@@ -205,6 +239,10 @@ function pad(n){ return ('0'+n).slice(-2); }
 function fmtDate(iso){ const [y,m,d]=iso.split('-'); return d+'.'+m; }
 function fmtLong(iso){ const [y,m,d]=iso.split('-'); return +d+' '+MONTHS[+m-1]+' '+y; }
 function dowOf(iso){ const [y,m,d]=iso.split('-'); return DOW[new Date(+y,+m-1,+d).getDay()]; }
+function isoOf(dt){ return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate()); }
+function addDays(iso,n){ const [y,m,d]=iso.split('-'); const dt=new Date(+y,+m-1,+d); dt.setDate(dt.getDate()+n); return isoOf(dt); }
+function weekStart(iso){ const [y,m,d]=iso.split('-'); const dt=new Date(+y,+m-1,+d); const dow=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-dow); return isoOf(dt); } // понедельник недели
+function dowShort(iso){ const [y,m,d]=iso.split('-'); return ['вс','пн','вт','ср','чт','пт','сб'][new Date(+y,+m-1,+d).getDay()]; }
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function initials(name){ const p=name.split(' '); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
@@ -352,6 +390,7 @@ function renderBoard(){
   const day = dayOf(cur);
   document.getElementById('curDate').textContent = fmtLong(cur) + (cur===isoToday()?' · сегодня':'');
   document.getElementById('curDow').textContent = dowOf(cur);
+  const dp = document.getElementById('datePick'); if(dp) dp.value = cur;
   const board = document.getElementById('board');
   board.innerHTML = PEOPLE.map(name=>cardHTML(name, day.people[name], cur, name===me)).join('');
   wireCards(cur);
@@ -457,7 +496,59 @@ function renderArchive(){
     });
   });
 }
-function renderAll(){ renderBoard(); renderArchive(); }
+function renderWeek(){
+  const el = document.getElementById('weekpanel'); if(!el) return;
+  const start = weekStart(cur);
+  const days = []; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  let done=0, wip=0, fail=0, moved=0, total=0;
+  const per = days.map(iso=>{
+    const tasks = (cache[iso] && cache[iso].people[me] && cache[iso].people[me].tasks) || [];
+    let dd=0;
+    tasks.forEach(t=>{ total++; if(t.st==='done'){done++;dd++;} else if(t.st==='fail')fail++; else if(t.st==='moved')moved++; else wip++; });
+    return {iso, total:tasks.length, done:dd};
+  });
+  const pct = total ? Math.round(done/total*100) : 0;
+  const range = fmtDate(start) + ' – ' + fmtDate(addDays(start,6));
+  const today = isoToday();
+  const maxT = Math.max(1, ...per.map(d=>d.total));
+
+  const seg=(c,col)=> c>0 ? `<i style="width:${c/total*100}%;background:${col}"></i>` : '';
+  const barHTML = total
+    ? `<div class="wk-pbar">${seg(done,'var(--done)')}${seg(wip,'var(--wip)')}${seg(fail,'var(--fail)')}${seg(moved,'var(--moved)')}</div>`
+    : '';
+
+  const stripHTML = per.map(d=>{
+    const h = d.total ? Math.round(d.total/maxT*100) : 0;       // высота столбика ∝ числу задач
+    const dh = d.total ? Math.round(d.done/d.total*100) : 0;     // доля выполненного
+    const cls = (d.iso===cur?' cur':'') + (d.iso===today?' today':'');
+    const colWrap = `<div class="wk-col" style="background:transparent"><div style="margin-top:auto;width:100%;height:${Math.max(h,6)}%;display:flex;flex-direction:column-reverse;border-radius:6px;overflow:hidden;background:var(--line)"><i style="height:${dh}%;background:var(--done)"></i></div></div>`;
+    return `<div class="wk-day${cls}" data-day="${d.iso}" title="${fmtDate(d.iso)}: ${d.done}/${d.total}">
+      <div class="wk-dlabel">${dowShort(d.iso)}</div>
+      ${colWrap}
+      <div class="wk-dnum">${d.iso.split('-')[2]}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="wk-top">
+      <span class="wk-title">Моя неделя</span>
+      <span class="wk-range">${range}</span>
+      <span class="wk-pct"><b>${pct}%</b> · ${done}/${total}</span>
+    </div>
+    ${barHTML}
+    ${total ? `<div class="wk-stats">
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--done)"></i> ${done} выполнено</span>
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--wip)"></i> ${wip} в работе</span>
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--fail)"></i> ${fail} не сделано</span>
+        <span><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--moved)"></i> ${moved} перенесено</span>
+      </div>` : `<div class="wk-empty">На этой неделе у вас пока нет задач.</div>`}
+    <div class="wk-strip">${stripHTML}</div>`;
+
+  el.querySelectorAll('.wk-day').forEach(d=>{
+    d.onclick=()=>{ cur=d.dataset.day; renderAll(); };
+  });
+}
+function renderAll(){ renderWeek(); renderBoard(); renderArchive(); }
 
 // ---------- actions ----------
 async function carryOver(){
@@ -501,6 +592,14 @@ async function init(){
   document.getElementById('prevDay').onclick=()=>shiftDay(-1);
   document.getElementById('nextDay').onclick=()=>shiftDay(1);
   document.getElementById('todayBtn').onclick=()=>{ cur=isoToday(); renderAll(); };
+  document.getElementById('yesterdayBtn').onclick=()=>{ cur=addDays(isoToday(),-1); renderAll(); };
+  document.getElementById('datePick').onchange=(e)=>{ if(e.target.value){ cur=e.target.value; renderAll(); } };
+  document.addEventListener('keydown',(e)=>{
+    const a=document.activeElement;
+    if(a && (/INPUT|TEXTAREA|SELECT/.test(a.tagName))) return; // не мешаем вводу
+    if(e.key==='ArrowLeft') shiftDay(-1);
+    else if(e.key==='ArrowRight') shiftDay(1);
+  });
   document.getElementById('carryBtn').onclick=carryOver;
   document.getElementById('syncBtn').onclick=()=>pollRefresh(true);
   document.getElementById('themeBtn').onclick=()=>{ document.body.classList.toggle('dark');
