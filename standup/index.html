@@ -271,6 +271,20 @@ function isoOf(dt){ return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.
 function addDays(iso,n){ const [y,m,d]=iso.split('-'); const dt=new Date(+y,+m-1,+d); dt.setDate(dt.getDate()+n); return isoOf(dt); }
 function weekStart(iso){ const [y,m,d]=iso.split('-'); const dt=new Date(+y,+m-1,+d); const dow=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-dow); return isoOf(dt); } // понедельник недели
 function dowShort(iso){ const [y,m,d]=iso.split('-'); return ['вс','пн','вт','ср','чт','пт','сб'][new Date(+y,+m-1,+d).getDay()]; }
+// Производственный календарь РФ 2026 (Постановление Правительства РФ от 24.09.2025 № 1466).
+// Нерабочие БУДНИ (выходные сб/вс определяются автоматически). Праздники, попавшие на сб/вс,
+// здесь не нужны. Перенос совпавших с выходными: 8 марта(вс)→пн 9.03; 9 мая(сб)→пн 11.05.
+const HOLIDAYS_2026 = new Set([
+  '2026-01-01','2026-01-02','2026-01-05','2026-01-06','2026-01-07','2026-01-08','2026-01-09',
+  '2026-02-23','2026-03-09','2026-05-01','2026-05-11','2026-06-12','2026-11-04','2026-12-31'
+]);
+const WORKDAYS_EXTRA = new Set([ /* рабочие субботы-переносы; в 2026 их нет */ ]);
+function isWorkday(iso){
+  if(WORKDAYS_EXTRA.has(iso)) return true;
+  if(HOLIDAYS_2026.has(iso)) return false;
+  const [y,m,d]=iso.split('-'); const dow=new Date(+y,+m-1,+d).getDay();
+  return dow!==0 && dow!==6;
+}
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function initials(name){ const p=name.split(' '); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
@@ -416,7 +430,7 @@ function statusCounts(day){
 }
 function renderBoard(){
   const day = dayOf(cur);
-  document.getElementById('curDate').textContent = fmtLong(cur) + (cur===isoToday()?' · сегодня':'');
+  document.getElementById('curDate').textContent = fmtLong(cur) + (cur===isoToday()?' · сегодня':'') + (isWorkday(cur)?'':' · нерабочий день');
   document.getElementById('curDow').textContent = dowOf(cur);
   const dp = document.getElementById('datePick'); if(dp) dp.value = cur;
   const board = document.getElementById('board');
@@ -536,7 +550,7 @@ function renderWeek(){
   const el = document.getElementById('weekpanel'); if(!el) return;
   if(isManager()){ renderTeamSummary(el); return; }
   const start = weekStart(cur);
-  const days = []; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  const days = []; for(let i=0;i<7;i++){ const iso=addDays(start,i); if(isWorkday(iso)) days.push(iso); }
   let done=0, wip=0, fail=0, moved=0, total=0;
   const per = days.map(iso=>{
     const tasks = (cache[iso] && cache[iso].people[me] && cache[iso].people[me].tasks) || [];
@@ -588,7 +602,7 @@ function renderWeek(){
 // сводка команды за неделю (режим руководителя)
 function renderTeamSummary(el){
   const start = weekStart(cur);
-  const days = []; for(let i=0;i<7;i++) days.push(addDays(start,i));
+  const days = []; for(let i=0;i<7;i++){ const iso=addDays(start,i); if(isWorkday(iso)) days.push(iso); }
   const range = fmtDate(start) + ' – ' + fmtDate(addDays(start,6));
   let tDone=0, tTotal=0, tBlk=0;
   const rows = PEOPLE.map(name=>{
