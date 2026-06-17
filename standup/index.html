@@ -74,12 +74,32 @@ body.dark .wk-pct b{color:var(--accent)}
 .wk-day.cur{border-color:var(--accent);background:rgba(108,179,58,.08)}
 .wk-day.today .wk-dnum{color:var(--accent-d)}
 body.dark .wk-day.today .wk-dnum{color:var(--accent)}
-.wk-col{width:100%;height:42px;display:flex;flex-direction:column-reverse;border-radius:6px;
-  background:var(--line);overflow:hidden}
-.wk-col i{width:100%;display:block}
+.wk-col{position:relative;width:100%;height:40px;background:var(--line);border-radius:6px;overflow:hidden}
+.wk-fill{position:absolute;left:0;right:0;bottom:0}
 .wk-dlabel{font-family:var(--mono);font-size:9px;color:var(--txt3);text-transform:uppercase}
 .wk-dnum{font-size:11px;font-weight:700;color:var(--txt2)}
 .wk-empty{color:var(--txt3);font-size:12.5px}
+
+/* task note + status popover */
+.tnote{font-size:11.5px;color:var(--txt2);background:var(--panel2);border-left:2px solid var(--line2);
+  border-radius:0 6px 6px 0;padding:3px 8px;margin:3px 0 1px 31px;word-break:break-word}
+.task.blocked .tnote{border-left-color:var(--block);color:var(--block)}
+.stpop-back{position:fixed;inset:0;z-index:60;background:transparent}
+.stpop{position:fixed;z-index:61;background:var(--panel);border:1px solid var(--line2);border-radius:12px;
+  box-shadow:var(--shadow);padding:10px;width:240px;display:flex;flex-direction:column;gap:8px}
+.stpop .opts{display:flex;flex-wrap:wrap;gap:6px}
+.stpop .opt{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;
+  border:1.5px solid var(--line2);border-radius:8px;padding:5px 8px;transition:.12s;background:var(--panel);color:var(--txt)}
+.stpop .opt:hover{border-color:var(--accent)}
+.stpop .opt.active{border-color:var(--accent);background:rgba(108,179,58,.1)}
+.stpop .opt .ic{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+.stpop textarea{width:100%;border:1.5px solid var(--line2);border-radius:8px;padding:6px 8px;font-family:var(--body);
+  font-size:12.5px;color:var(--txt);background:var(--panel);resize:vertical;min-height:34px;outline:none;line-height:1.35}
+.stpop textarea:focus{border-color:var(--accent)}
+.stpop .pf{display:flex;justify-content:space-between;align-items:center}
+.stpop .pf .hint{font-size:10.5px;color:var(--txt3)}
+.stpop .pf .done-btn{font-size:12px;font-weight:600;color:#fff;background:var(--accent);border:none;
+  border-radius:8px;padding:5px 12px;cursor:pointer}
 .cfgbar{display:none;align-items:center;gap:10px;background:rgba(224,153,61,.12);border:1px solid var(--moved);
   color:var(--moved);border-radius:11px;padding:9px 14px;margin-bottom:16px;font-size:12.5px}
 .cfgbar.show{display:flex}
@@ -387,6 +407,7 @@ async function saveDay(iso){
   }finally{ saving--; }
 }
 async function pollRefresh(force){
+  if(_pop) return; // открыта всплывашка статуса — не трогаем
   if(!force){ if(document.hidden) return; if(saving>0) return; }
   try{
     const rows = await apiGetAll();
@@ -467,11 +488,49 @@ function cardHTML(name, pdata, iso, editable){
   </div>`;
 }
 function taskHTML(t, editable){
+  const note = t.note ? `<div class="tnote">${esc(t.note)}</div>` : '';
   return `<div class="task ${t.st}" data-task="${t.id}">
-    <div class="st st-${t.st}" data-st title="${ST_LABEL[t.st]}">${ST_ICON[t.st]}</div>
-    <div class="ttext">${esc(t.text)}</div>
+    <div class="st st-${t.st}" data-st title="${editable?'клик — статус и комментарий':ST_LABEL[t.st]}">${ST_ICON[t.st]}</div>
+    <div class="ttext">${esc(t.text)}${note}</div>
     ${editable?`<div class="tdel" data-del title="удалить">×</div>`:''}
   </div>`;
+}
+// ---------- всплывашка: статус + комментарий ----------
+let _pop = null;
+function openTaskEditor(iso, t, anchorEl){
+  if(_pop){ _pop.back.remove(); _pop=null; }
+  const back = document.createElement('div'); back.className='stpop-back';
+  const pop = document.createElement('div'); pop.className='stpop';
+  const opts = ST.map(s=>`<div class="opt${s===t.st?' active':''}" data-opt="${s}"><span class="ic st-${s}">${ST_ICON[s]}</span>${ST_LABEL[s]}</div>`).join('');
+  pop.innerHTML = `<div class="opts">${opts}</div>
+    <textarea data-pnote placeholder="комментарий: почему висит / причина блокера…">${esc(t.note||'')}</textarea>
+    <div class="pf"><span class="hint">сохранится при «Готово»</span><button class="done-btn" data-pdone>Готово</button></div>`;
+  back.appendChild(pop); document.body.appendChild(back);
+  _pop = {iso, t, back};
+  // позиционирование рядом с иконкой
+  const r = anchorEl.getBoundingClientRect();
+  const pw = 240, ph = pop.offsetHeight || 170;
+  let left = r.left, top = r.bottom + 6;
+  if(left + pw > window.innerWidth - 10) left = window.innerWidth - pw - 10;
+  if(top + ph > window.innerHeight - 10) top = Math.max(10, r.top - ph - 6);
+  pop.style.left = Math.max(10,left)+'px'; pop.style.top = top+'px';
+  pop.querySelectorAll('[data-opt]').forEach(o=>{
+    o.onclick=()=>{ t.st=o.dataset.opt; pop.querySelectorAll('[data-opt]').forEach(x=>x.classList.toggle('active', x===o)); };
+  });
+  const ta = pop.querySelector('[data-pnote]'); ta.oninput=()=>{ t.note = ta.value; };
+  pop.querySelector('[data-pdone]').onclick=commitEditor;
+  back.onclick=(e)=>{ if(e.target===back) commitEditor(); };
+  document.addEventListener('keydown', escClose);
+  ta.focus();
+}
+function escClose(e){ if(e.key==='Escape') commitEditor(); }
+function commitEditor(){
+  if(!_pop) return;
+  const {iso, t, back} = _pop;
+  if(t.note!=null){ t.note = String(t.note).trim(); if(!t.note) delete t.note; }
+  document.removeEventListener('keydown', escClose);
+  back.remove(); _pop=null;
+  saveDay(iso).then(()=>renderAll());
 }
 function wireCards(iso){
   const day = dayOf(iso);
@@ -486,7 +545,7 @@ function wireCards(iso){
     // task status + delete
     card.querySelectorAll('.task').forEach(tr=>{
       const t = p.tasks.find(x=>x.id===tr.dataset.task); if(!t) return;
-      const st = tr.querySelector('[data-st]'); if(st) st.onclick=()=>{ t.st=ST[(ST.indexOf(t.st)+1)%ST.length]; saveDay(iso).then(()=>renderAll()); };
+      const st = tr.querySelector('[data-st]'); if(st) st.onclick=(e)=>{ openTaskEditor(iso, t, st); };
       const del = tr.querySelector('[data-del]'); if(del) del.onclick=()=>{ p.tasks=p.tasks.filter(x=>x.id!==t.id); saveDay(iso).then(()=>renderAll()); };
     });
     // add tasks
@@ -540,7 +599,7 @@ function renderArchive(){
       const name=mini.dataset.mini, p=dayOf(iso).people[name];
       mini.querySelectorAll('.task').forEach(tr=>{
         const t=p.tasks.find(x=>x.id===tr.dataset.task); if(!t) return;
-        const st=tr.querySelector('[data-st]'); if(st) st.onclick=()=>{ t.st=ST[(ST.indexOf(t.st)+1)%ST.length]; saveDay(iso).then(()=>renderAll()); };
+        const st=tr.querySelector('[data-st]'); if(st) st.onclick=()=>{ openTaskEditor(iso, t, st); };
       });
     });
   });
@@ -569,13 +628,16 @@ function renderWeek(){
     : '';
 
   const stripHTML = per.map(d=>{
-    const h = d.total ? Math.round(d.total/maxT*100) : 0;       // высота столбика ∝ числу задач
-    const dh = d.total ? Math.round(d.done/d.total*100) : 0;     // доля выполненного
+    const fillH = d.total ? Math.max(8, Math.round(d.total/maxT*100)) : 0; // высота заливки ∝ числу задач
+    const doneH = d.total ? Math.round(d.done/d.total*fillH) : 0;          // зелёная часть (доля выполненного)
     const cls = (d.iso===cur?' cur':'') + (d.iso===today?' today':'');
-    const colWrap = `<div class="wk-col" style="background:transparent"><div style="margin-top:auto;width:100%;height:${Math.max(h,6)}%;display:flex;flex-direction:column-reverse;border-radius:6px;overflow:hidden;background:var(--line)"><i style="height:${dh}%;background:var(--done)"></i></div></div>`;
+    const col = `<div class="wk-col">
+        <div class="wk-fill" style="height:${fillH}%;background:var(--wip)"></div>
+        <div class="wk-fill" style="height:${doneH}%;background:var(--done)"></div>
+      </div>`;
     return `<div class="wk-day${cls}" data-day="${d.iso}" title="${fmtDate(d.iso)}: ${d.done}/${d.total}">
       <div class="wk-dlabel">${dowShort(d.iso)}</div>
-      ${colWrap}
+      ${col}
       <div class="wk-dnum">${d.iso.split('-')[2]}</div>
     </div>`;
   }).join('');
@@ -645,7 +707,8 @@ function renderBlockers(){
     PEOPLE.forEach(name=>{
       const tasks = (day.people[name] && day.people[name].tasks) || [];
       tasks.filter(t=>t.st==='blocked').forEach(t=>{
-        items.push(`<li><span class="bp-who">${esc(name.split(' ')[0])}</span><span class="bp-task">${esc(t.text)}</span></li>`);
+        const reason = t.note ? ` — <span style="color:var(--txt2)">${esc(t.note)}</span>` : '';
+        items.push(`<li><span class="bp-who">${esc(name.split(' ')[0])}</span><span class="bp-task">${esc(t.text)}${reason}</span></li>`);
       });
     });
   }
