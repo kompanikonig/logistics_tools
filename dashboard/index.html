@@ -32,6 +32,8 @@ a{color:inherit}
 /* header */
 header{padding:30px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px;position:relative;overflow:hidden}
 .brandrow{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.lobby-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--txt3);text-decoration:none;letter-spacing:.3px;margin-bottom:6px;opacity:.75;transition:opacity .15s}
+.lobby-back:hover{opacity:1;color:var(--accent)}
 .brand h1{font-family:var(--disp);font-weight:900;font-size:31px;letter-spacing:-.5px;line-height:1.05;
   background:linear-gradient(92deg,#243042 25%,var(--accent-d) 120%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .brand .sub{color:var(--txt2);font-size:13.5px;margin-top:8px;letter-spacing:.2px}
@@ -414,6 +416,7 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 <header><div class="wrap">
   <div class="brandrow">
     <div class="brand">
+      <a href="../" class="lobby-back" title="Вернуться на главную страницу инструментов">← Лобби</a>
       <h1>Панель загрузки и сроков</h1>
       <div class="sub">Анализ загрузки исполнителей · контроль сроков · планирование ресурсов</div>
     </div>
@@ -792,7 +795,7 @@ function renderHeatmap(){
       v.m.map((val,mi)=>{
         const z=val<=0.005;
         if(z && zeroSel) return `<td><div class="cell mcell free" title="не занят">0</div></td>`;
-        const clickable = !z && name!=='Без назначения';
+        const clickable = !z;
         return `<td><div class="${cellCls(val)}${clickable?' clk':''}" style="background:${loadColor(val)}" title="${fmtPct(val)}${clickable?' · клик — разбивка по проектам':''}"${clickable?` onclick="openCellDrill(${ri},${mi})"`:''}>${z?'·':Math.round(val*100)}</div></td>`;}).join('')+
       `<td><div class="${cellCls(avg).replace(' mcell','')}" style="background:${loadColor(avg)};opacity:.92">${avg<=0.005?'·':fmtPct(avg)}</div></td></tr>`;
   });
@@ -1090,21 +1093,35 @@ let HM_LAST=[];
 function openCellDrill(ri, mi){
   const entry=HM_LAST[ri]; if(!entry) return;
   const name=entry[0], v=entry[1];
-  if(name==='Без назначения') return;
   const items=v.rows.map(r=>({r, load:monthLoad(r,mi)})).filter(o=>o.load>0.005).sort((a,b)=>b.load-a.load);
   if(!items.length) return;
-  const total=items.reduce((s,o)=>s+o.load,0);
-  const card=`
-    <button class="mclose" onclick="closeDrill()">✕</button>
-    <div class="mtitle">${name} · ${MONTHS[mi]}</div>
-    <div class="mtags"><span class="tagc" style="background:${loadColor(total)};color:#06140f;font-weight:700">${Math.round(total*100)}% загрузка</span>${[...v.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')}</div>
-    <div class="msec">Проекты в этом месяце · ${items.length}</div>
-    ${items.map(o=>`<div class="mrow">
-        <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
-          <div class="sub2">${o.r.competency}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
-        <span class="loadpill" style="background:${loadColor(o.load)}">${Math.round(o.load*100)}%</span>
-      </div>`).join('')}
-  `;
+  let card;
+  if(name==='Без назначения'){
+    card=`
+      <button class="mclose" onclick="closeDrill()">✕</button>
+      <div class="mtitle">Без назначения · ${MONTHS[mi]}</div>
+      <div class="mtags"><span class="tagc" style="background:var(--c-over);color:#fff;font-weight:700">${items.length} позиций без исполнителя</span></div>
+      <div class="msec">Проекты, ожидающие назначения · ${items.length}</div>
+      ${items.map(o=>`<div class="mrow">
+          <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
+            <div class="sub2">${o.r.competency}${o.r.manager&&o.r.manager!=='—'?' · РП: '+o.r.manager:''}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
+          <span class="loadpill" style="background:var(--c-over);color:#fff">${Math.round(o.load*100)}%</span>
+        </div>`).join('')}
+    `;
+  } else {
+    const total=items.reduce((s,o)=>s+o.load,0);
+    card=`
+      <button class="mclose" onclick="closeDrill()">✕</button>
+      <div class="mtitle">${name} · ${MONTHS[mi]}</div>
+      <div class="mtags"><span class="tagc" style="background:${loadColor(total)};color:#06140f;font-weight:700">${Math.round(total*100)}% загрузка</span>${[...v.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')}</div>
+      <div class="msec">Проекты в этом месяце · ${items.length}</div>
+      ${items.map(o=>`<div class="mrow">
+          <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
+            <div class="sub2">${o.r.competency}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
+          <span class="loadpill" style="background:${loadColor(o.load)}">${Math.round(o.load*100)}%</span>
+        </div>`).join('')}
+    `;
+  }
   document.getElementById('drillCard').innerHTML=card;
   document.getElementById('drill').hidden=false;
 }

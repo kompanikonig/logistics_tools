@@ -26,6 +26,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--body);font-size:14p
   -webkit-font-smoothing:antialiased;padding:0 0 60px}
 .wrap{max-width:1320px;margin:0 auto;padding:22px 22px 0}
 header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.lobby-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--txt3);text-decoration:none;letter-spacing:.3px;margin-bottom:6px;opacity:.75;transition:opacity .15s}
+.lobby-back:hover{opacity:1;color:var(--accent)}
 h1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0;color:var(--accent-d)}
 body.dark h1{color:var(--accent)}
 .sub{color:var(--txt2);font-size:13px;margin-top:4px}
@@ -229,6 +231,7 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 <div class="wrap">
   <header class="top">
     <div>
+      <a href="../" class="lobby-back" title="Вернуться на главную страницу инструментов">← Лобби</a>
       <h1>Стендап команды</h1>
       <div class="sub">Ежедневный план в свободной форме · статусы задач · архив по дням</div>
     </div>
