@@ -1211,6 +1211,9 @@ async function loadLive(){
       .select('competency,cab_url,start_date,end_date,alloc_percent,projects(name,manager),resources(name)');
     if(error) throw error;
     const recs=mapToRows(data);
+    const unassignedDebug=recs.filter(r=>r.executor==='Без назначения');
+    console.log('[DEBUG] total rows:', recs.length, '| unassigned:', unassignedDebug.length);
+    console.log('[DEBUG] unassigned sample:', unassignedDebug.slice(0,3).map(r=>({executor:r.executor,alloc:r.alloc,start:r.start,end:r.end})));
     applyData(recs);
     const t=new Date(),hh=('0'+t.getHours()).slice(-2),mm=('0'+t.getMinutes()).slice(-2);
     setStatus('live','Supabase · '+recs.length+' строк · '+hh+':'+mm);
