@@ -1351,21 +1351,24 @@ function applyData(records){
   render();
 }
 function mapToRows(data){
-  return data.map(a=>({
-    _aid:       a.id,
-    _pid:       a.project_id,
-    _rid:       a.resource_id,
-    _pobj:      a.projects,
-    project:    a.projects?.name    ?? '—',
-    executor:   (!a.resources || /без.?назначения/i.test(a.resources.name??'')) ? 'Без назначения' : a.resources.name,
-    manager:    a.projects?.manager ?? '—',
-    competency: a.competency        ?? '—',
-    cab:        a.cab_url           ?? '',
-    start:      a.start_date        ?? '',
-    end:        a.end_date          ?? '',
-    alloc:      Number(a.alloc_percent) || 0,
-    q1:0, q2:0, q3:0, q4:0,
-  }));
+  return data.map(a=>{
+    const start=a.start_date??'', end=a.end_date??'', alloc=Number(a.alloc_percent)||0;
+    const r0={start,end,alloc};
+    const qv=q=>{ let v=0; for(let mi=q*3;mi<q*3+3;mi++) v+=monthLoad(r0,mi); return v/3; };
+    return {
+      _aid:       a.id,
+      _pid:       a.project_id,
+      _rid:       a.resource_id,
+      _pobj:      a.projects,
+      project:    a.projects?.name    ?? '—',
+      executor:   (!a.resources || /без.?назначения/i.test(a.resources.name??'')) ? 'Без назначения' : a.resources.name,
+      manager:    a.projects?.manager ?? '—',
+      competency: a.competency        ?? '—',
+      cab:        a.cab_url           ?? '',
+      start, end, alloc,
+      q1:qv(0), q2:qv(1), q3:qv(2), q4:qv(3),
+    };
+  });
 }
 async function loadLive(){
   const btn={disabled:false};
