@@ -1124,10 +1124,13 @@ function openCellDrill(ri, mi){
       <div class="mtitle">Без назначения · ${MONTHS[mi]}</div>
       <div class="mtags"><span class="tagc" style="background:var(--c-over);color:#fff;font-weight:700">${items.length} позиций без исполнителя</span></div>
       <div class="msec">Проекты, ожидающие назначения · ${items.length}</div>
-      ${items.map(o=>`<div class="mrow">
+      ${items.map(o=>`<div class="mrow edit-row" title="Назначить исполнителя" onclick="closeDrill();openAddAssignment('${o.r._pid}')">
           <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
             <div class="sub2">${o.r.competency}${o.r.manager&&o.r.manager!=='—'?' · РП: '+o.r.manager:''}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
-          <span class="loadpill" style="background:var(--c-over);color:#fff">${Math.round(o.load*100)}%</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <span class="loadpill" style="background:var(--c-over);color:#fff">${Math.round(o.load*100)}%</span>
+            <span class="edit-hint">＋</span>
+          </div>
         </div>`).join('')}
     `;
   } else {
