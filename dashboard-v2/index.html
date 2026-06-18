@@ -349,6 +349,8 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 .edit-row{cursor:pointer;transition:background .12s;border-radius:8px}
 .edit-row:hover{background:var(--panel2)}
 .edit-hint{font-size:11px;color:var(--txt3);margin-left:4px;opacity:.7}
+.add-row-btn{display:flex;align-items:center;gap:7px;width:100%;margin-top:6px;padding:10px 14px;background:transparent;border:1.5px dashed var(--line2);border-radius:10px;color:var(--txt3);font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s}
+.add-row-btn:hover{border-color:var(--accent);color:var(--accent)}
 .mtitle{font-family:var(--disp);font-weight:800;font-size:19px;letter-spacing:-.3px;padding-right:38px;line-height:1.2}
 .mtags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 14px}
 .mstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
@@ -1197,6 +1199,7 @@ function openDrill(idx){
               <span class="edit-hint">✏</span>
             </div>
           </div>`).join('')
+        + `<button class="add-row-btn" onclick="openAddAssignment('${g.rows[0]?._pid}')">＋ Добавить исполнителя</button>`
     }
   `;
   document.getElementById('drillCard').innerHTML=card;
@@ -1269,6 +1272,65 @@ async function saveAssignment(aid){
 async function deleteAssignment(aid){
   if(!confirm('Удалить это назначение?')) return;
   await sbWriteAndRefresh(()=>sbDelete('assignments',aid));
+}
+
+// ── добавление исполнителя в проект ──────────────────────────────────────────
+function openAddAssignment(pid){
+  if(!pid){ alert('Не удалось определить проект'); return; }
+  const proj=ALL_PROJECTS.find(p=>p.id===pid);
+  const resOpts=ALL_RESOURCES.map(r=>
+    `<option value="${r.id}">${r.name}</option>`
+  ).join('');
+  const compOpts=COMPETENCIES.map(c=>
+    `<option value="${c}">${c}</option>`
+  ).join('');
+  openEditModal(`
+    <button class="mclose" onclick="closeEditModal()">✕</button>
+    <div class="mtitle">Новое назначение</div>
+    <div class="mtags"><span class="tagc comp">${proj?.name??'—'}</span></div>
+    <div class="ef">
+      <div class="ef-row">
+        <label>Исполнитель</label>
+        <select id="aa-rid" class="ef-inp">
+          <option value="">— Без назначения —</option>
+          ${resOpts}
+        </select>
+      </div>
+      <div class="ef-row">
+        <label>Компетенция</label>
+        <select id="aa-comp" class="ef-inp">${compOpts}</select>
+      </div>
+      <div class="ef-2col">
+        <div class="ef-row"><label>Начало</label>
+          <input id="aa-start" type="date" class="ef-inp"></div>
+        <div class="ef-row"><label>Окончание</label>
+          <input id="aa-end" type="date" class="ef-inp"></div>
+      </div>
+      <div class="ef-row">
+        <label>Загрузка, %</label>
+        <input id="aa-alloc" type="number" class="ef-inp" min="0" max="200" step="5" value="100">
+      </div>
+      <div class="ef-actions">
+        <button class="ef-save" id="aa-savebtn" onclick="saveAddAssignment('${pid}')">Добавить</button>
+        <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
+      </div>
+    </div>
+  `);
+}
+
+async function saveAddAssignment(pid){
+  const rid=document.getElementById('aa-rid').value||null;
+  const comp=document.getElementById('aa-comp').value;
+  const start=document.getElementById('aa-start').value||null;
+  const end=document.getElementById('aa-end').value||null;
+  const allocPct=parseFloat(document.getElementById('aa-alloc').value);
+  const alloc=isNaN(allocPct)?0:allocPct/100;
+  const btn=document.getElementById('aa-savebtn');
+  btn.disabled=true; btn.textContent='Добавляю…';
+  await sbWriteAndRefresh(()=>sbUpsert('assignments',{
+    project_id:pid, resource_id:rid, competency:comp,
+    start_date:start, end_date:end, alloc_percent:alloc,
+  }));
 }
 
 // ── edit modal ────────────────────────────────────────────────────────────────
