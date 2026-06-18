@@ -337,6 +337,7 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 .ef-row label{font-size:11.5px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
 .ef-inp{padding:9px 12px;border:1px solid var(--line2);border-radius:9px;font-size:14px;background:var(--panel2);color:var(--txt);outline:none;width:100%;box-sizing:border-box;transition:border-color .15s}
 .ef-inp:focus{border-color:var(--accent)}
+input[type="date"].ef-inp{cursor:pointer}
 .ef-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ef-actions{display:flex;gap:10px;margin-top:4px;align-items:center;flex-wrap:wrap}
 .ef-save{padding:9px 22px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
@@ -344,6 +345,8 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 .ef-save:disabled{opacity:.5;cursor:default}
 .ef-cancel{padding:9px 16px;background:transparent;color:var(--txt2);border:1px solid var(--line2);border-radius:9px;font-size:14px;cursor:pointer}
 .ef-cancel:hover{border-color:var(--txt2);color:var(--txt)}
+.ef-delete{padding:9px 16px;background:transparent;color:var(--c-over);border:1px solid rgba(239,68,68,.3);border-radius:9px;font-size:14px;cursor:pointer;margin-left:auto}
+.ef-delete:hover{background:rgba(239,68,68,.08);border-color:var(--c-over)}
 .ef-del{margin-left:auto;padding:9px 16px;background:transparent;color:var(--c-over);border:1px solid var(--c-over);border-radius:9px;font-size:14px;cursor:pointer}
 .ef-del:hover{background:var(--c-over);color:#fff}
 .edit-row{cursor:pointer;transition:background .12s;border-radius:8px}
@@ -351,6 +354,32 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 .edit-hint{font-size:11px;color:var(--txt3);margin-left:4px;opacity:.7}
 .add-row-btn{display:flex;align-items:center;gap:7px;width:100%;margin-top:6px;padding:10px 14px;background:transparent;border:1.5px dashed var(--line2);border-radius:10px;color:var(--txt3);font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s}
 .add-row-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tag-edit-btn{font-size:11px;padding:3px 9px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--txt2);cursor:pointer;vertical-align:middle;margin-left:4px;transition:border-color .15s,color .15s}
+.tag-edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+.drill-tl{margin:6px 0 0;overflow-x:auto}
+.dtl-hdr{display:grid;grid-template-columns:190px 1fr;gap:8px;padding-bottom:3px}
+.dtl-mh{display:grid;grid-template-columns:repeat(12,1fr);gap:2px}
+.dtl-mh span{font-size:9px;color:var(--txt3);text-align:center}
+.dtl-row{display:grid;grid-template-columns:190px 1fr;align-items:center;gap:8px;border-top:1px solid var(--line);padding:4px 0;cursor:pointer;border-radius:6px;transition:background .12s}
+.dtl-row:hover{background:var(--bg2)}
+.dtl-info{display:flex;align-items:center;gap:6px;font-size:13px;overflow:hidden;padding:3px 4px}
+.dtl-info .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtl-strip{display:grid;grid-template-columns:repeat(12,1fr);gap:2px}
+.dtl-cell{height:26px;border-radius:4px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--line2);color:var(--txt3)}
+.dtl-row-hdr{cursor:default}
+.dtl-row-hdr:hover{background:transparent}
+.dtl-periods{padding:0 4px 6px 16px;display:flex;flex-direction:column;gap:2px}
+.dtl-period{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px;transition:background .12s}
+.dtl-period:hover{background:var(--bg2)}
+.dtl-period .pdates{color:var(--txt2);flex:1;min-width:0}
+.dtl-period-add{color:var(--accent);font-weight:600;border:1px dashed var(--line2);justify-content:center;margin-top:2px}
+.dtl-period-add:hover{border-color:var(--accent);background:transparent}
+.ef-periods{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.ef-period-row{background:var(--bg2);border-radius:10px;padding:10px 12px;position:relative}
+.ef-period-del{position:absolute;top:6px;right:10px;background:none;border:none;cursor:pointer;font-size:15px;color:var(--txt3);line-height:1}
+.ef-period-del:hover{color:var(--c-over)}
+.ef-add-period{background:none;border:1px dashed var(--line2);color:var(--accent);width:100%;padding:8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:border-color .15s,background .15s;margin-bottom:4px}
+.ef-add-period:hover{border-color:var(--accent);background:var(--bg2)}
 .mtitle{font-family:var(--disp);font-weight:800;font-size:19px;letter-spacing:-.3px;padding-right:38px;line-height:1.2}
 .mtags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 14px}
 .mstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
@@ -447,6 +476,8 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 <div class="wrap">
   <div class="databar">
     <button id="syncBtn" class="refresh" style="background:var(--accent);color:#fff;border-color:var(--accent)" title="Загрузить актуальные данные из Google Sheets в базу">⇅ Синхронизировать с таблицей</button>
+    <button class="refresh" onclick="openCreateProject()" title="Создать новый проект">＋ Новый проект</button>
+    <button class="refresh" onclick="openCreateResource()" title="Добавить нового исполнителя">＋ Исполнитель</button>
     <span id="dataStatus" class="dstatus"></span>
   </div>
 
@@ -522,8 +553,13 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 const SUPABASE_URL = 'https://esszpbcsdvdgtqauuqku.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const LOGIN_EMAIL = 'kvladislav2703@gmail.com';
+const PASS_HASH = 'e8702ecd939e3ace89e85e0df11878c76de38bc8c4ed42f1d842abb05e9b511a';
+const AUTH_KEY  = 'dv2_auth';
 
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 function showDashboard(){
   document.getElementById('loginOverlay').classList.add('hidden');
   loadMeta();
@@ -540,21 +576,22 @@ async function doLogin(){
   const err = document.getElementById('loginErr');
   if(!pwd){ err.textContent='Введите пароль'; return; }
   btn.disabled = true; btn.textContent = 'Проверка…'; err.textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email: LOGIN_EMAIL, password: pwd });
-  btn.disabled = false; btn.textContent = 'Войти';
-  if(error){ err.textContent = 'Неверный пароль'; document.getElementById('loginPwd').select(); return; }
-  showDashboard();
-  loadLive();
+  const hash = await sha256(pwd);
+  if(hash === PASS_HASH){
+    localStorage.setItem(AUTH_KEY, hash);
+    showDashboard();
+    loadLive();
+  } else {
+    btn.disabled = false; btn.textContent = 'Войти';
+    err.textContent = 'Неверный пароль';
+    document.getElementById('loginPwd').select();
+  }
 }
 document.getElementById('loginBtn').onclick = doLogin;
 document.getElementById('loginPwd').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-// ── проверяем сессию при загрузке ─────────────────────────────────────────────
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if(session){ showDashboard(); loadLive(); }
-  // иначе оверлей остаётся видимым
-})();
+// ── проверяем кеш при загрузке ────────────────────────────────────────────────
+if(localStorage.getItem(AUTH_KEY) === PASS_HASH){ showDashboard(); loadLive(); }
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DATA = [{"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6971", "start": "2026-01-12", "end": "2026-06-30", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6972", "start": "2026-07-01", "end": "2026-08-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.6666666667, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6973", "start": "2026-09-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.1666666667, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-6974", "start": "2026-01-12", "end": "2026-05-08", "alloc": 0.5, "q1": 0.4453125, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-6975", "start": "2026-05-08", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0, "q2": 0.05846153846, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-6976", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.2, "q4": 0.0}, {"project": "Автослотинг", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-10429", "start": "2026-05-18", "end": "2026-09-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Автослотинг", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-10430", "start": "2026-07-01", "end": "2026-09-10", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.7878787879, "q4": 0.0}, {"project": "Автослотинг", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-10431", "start": "2026-07-01", "end": "2026-09-10", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.7878787879, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Павел Чистяков", "cab": "https://detmir.atlassian.net/browse/CAB-6116", "start": "2026-01-12", "end": "2026-07-31", "alloc": 0.9, "q1": 0.8015625, "q2": 0.9, "q3": 0.3136363636, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-6117", "start": "2026-02-02", "end": "2026-03-13", "alloc": 1.0, "q1": 0.46875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Александр Грязнов", "cab": "https://detmir.atlassian.net/browse/CAB-6118", "start": "2026-03-02", "end": "2026-07-31", "alloc": 0.5, "q1": 0.171875, "q2": 0.5, "q3": 0.1742424242, "q4": 0.0}, {"project": "Автозапуск", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-6119", "start": "2025-01-13", "end": "2026-07-31", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.1045454545, "q4": 0.0}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Андрей Жураховский", "cab": "https://detmir.atlassian.net/browse/CAB-6289", "start": "2026-01-12", "end": "2026-12-30", "alloc": 0.7, "q1": 0.6234375, "q2": 0.7, "q3": 0.7, "q4": 0.6893939394}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-6290", "start": "2026-01-12", "end": "2026-05-08", "alloc": 0.9, "q1": 0.8015625, "q2": 0.3876923077, "q3": 0.0, "q4": 0.0}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-6291", "start": "2026-05-10", "end": "2026-12-30", "alloc": 0.3, "q1": 0.0, "q2": 0.1707692308, "q3": 0.3, "q4": 0.2954545455}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-6292", "start": "2026-01-01", "end": "2026-12-30", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.3, "q4": 0.2954545455}, {"project": "Работа c ВГХ товара", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4942", "start": "2026-01-12", "end": "2026-07-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.1045454545, "q4": 0.0}, {"project": "Работа c ВГХ товара", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-4943", "start": "2026-01-12", "end": "2026-03-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Работа c ВГХ товара", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-4944", "start": "2026-03-02", "end": "2026-06-30", "alloc": 0.5, "q1": 0.171875, "q2": 0.5, "q3": 0.0, "q4": 0.0}, {"project": "Упаковка индивидуальная", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Реализовать общую дорожку сборки на Б-2 для отказа от PBL", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-7099", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Мультипикинг", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Без назначения", "cab": "", "start": "2026-02-02", "end": "2026-03-06", "alloc": 0.5, "q1": 0.1953125, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Мультипикинг ШП для Урала", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Андрей Жураховский", "cab": "https://detmir.atlassian.net/browse/CAB-10332", "start": "2026-03-10", "end": "2026-05-08", "alloc": 0.5, "q1": 0.125, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Обработка межскладских перемещений", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "", "start": "2026-09-01", "end": "2026-12-07", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.3333333333, "q4": 0.7272727273}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.8, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.5212121212}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.3257575758}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.1, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.06515151515}, {"project": "Вторичный контроль (масштабирование)", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-4858", "start": "2026-01-12", "end": "2026-06-30", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "Вторичный контроль (масштабирование)", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-4858", "start": "2026-06-01", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0, "q2": 0.03384615385, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-3072", "start": "2026-01-12", "end": "2026-02-05", "alloc": 1.0, "q1": 0.296875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-3073", "start": "2026-03-16", "end": "2026-12-31", "alloc": 1.0, "q1": 0.1875, "q2": 1.0, "q3": 1.0, "q4": 1.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Станислав Хлобыстов", "cab": "https://detmir.atlassian.net/browse/CAB-3074", "start": "2026-03-23", "end": "2026-05-08", "alloc": 0.5, "q1": 0.0546875, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Станислав Хлобыстов", "cab": "https://detmir.atlassian.net/browse/CAB-3075", "start": "2026-05-10", "end": "2026-12-31", "alloc": 0.9, "q1": 0.0, "q2": 0.5123076923, "q3": 0.9, "q4": 0.9}, {"project": "Работа с марками на складе", "competency": "SAP_GIS_EDO", "manager": "Олег Саушкин", "executor": "Радик Хамитов", "cab": "https://detmir.atlassian.net/browse/CAB-3076", "start": "2026-03-12", "end": "2026-12-31", "alloc": 0.2, "q1": 0.04375, "q2": 0.2, "q3": 0.2, "q4": 0.2}, {"project": "Работа с марками на складе", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-3077", "start": "2026-01-01", "end": "2026-12-31", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.3, "q4": 0.3}, {"project": "YMS", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4453", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.3, "q4": 0.3}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-4454", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.5, "q4": 0.5}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Хапаев", "cab": "https://detmir.atlassian.net/browse/CAB-4455", "start": "2026-07-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.5, "q4": 0.0}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Хапаев", "cab": "https://detmir.atlassian.net/browse/CAB-4456", "start": "2026-10-01", "end": "2026-12-30", "alloc": 0.9, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.8863636364}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-4457", "start": "2026-05-11", "end": "2026-07-10", "alloc": 0.9, "q1": 0.0, "q2": 0.5123076923, "q3": 0.1090909091, "q4": 0.0}, {"project": "YMS", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Роман Поверенный", "cab": "https://detmir.atlassian.net/browse/CAB-4458", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.6, "q1": 0.534375, "q2": 0.6, "q3": 0.4, "q4": 0.0}, {"project": "YMS", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Ольга Воинова", "cab": "https://detmir.atlassian.net/browse/CAB-4459", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.3333333333, "q4": 0.0}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б1", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-8578", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б2", "competency": "CASH", "manager": "Павел Шакиров", "executor": "Наталья Золотарева", "cab": "https://detmir.atlassian.net/browse/CAB-8579", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б3", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-8580", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.1, "q1": 0.0, "q2": 0.04153846154, "q3": 0.1, "q4": 0.007575757576}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б4", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Марина Котелевская", "cab": "https://detmir.atlassian.net/browse/CAB-8581", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б5", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8582", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.1, "q1": 0.0, "q2": 0.04153846154, "q3": 0.1, "q4": 0.007575757576}, {"project": "Доставка ИМ с РЦ Б1 через Урал", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9306", "start": "2026-07-01", "end": "2026-08-25", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.6060606061, "q4": 0.0}, {"project": "Доставка ИМ с РЦ Б1 через Урал", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9307", "start": "2026-07-01", "end": "2026-10-30", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 1.0, "q4": 0.3333333333}, {"project": "Работа с АЕИ измерения на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-4468", "start": "2026-04-01", "end": "2026-06-01", "alloc": 0.5, "q1": 0.0, "q2": 0.3384615385, "q3": 0.0, "q4": 0.0}, {"project": "Размещение изшликов по местам отбора по задачам", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-10122", "start": "2026-09-01", "end": "2026-10-12", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.1666666667, "q4": 0.06060606061}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Евгений Петров", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.1, "q1": 0.0890625, "q2": 0.1, "q3": 0.1, "q4": 0.1}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Александр Грязнов", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.5, "q4": 0.5}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Без назначения", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-04-01", "end": "2026-06-30", "alloc": 0.2, "q1": 0.0, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "SAP BI", "manager": "Павел Шакиров", "executor": "Сергей Егоров", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-03-18", "end": "2026-07-20", "alloc": 0.7, "q1": 0.109375, "q2": 0.7, "q3": 0.1484848485, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-03-18", "end": "2026-07-20", "alloc": 0.1, "q1": 0.015625, "q2": 0.1, "q3": 0.02121212121, "q4": 0.0}, {"project": "Калькулятор Импорта", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Ольга Воинова", "cab": "https://detmir.atlassian.net/browse/CAB-8545", "start": "2026-03-23", "end": "2026-06-30", "alloc": 0.7, "q1": 0.0765625, "q2": 0.7, "q3": 0.0, "q4": 0.0}, {"project": "Калькулятор Импорта", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8545", "start": "2026-03-23", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0109375, "q2": 0.1, "q3": 0.0, "q4": 0.0}, {"project": "Минимальный Нормативный Запас (МНЗ)", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Константин Пантелеев", "cab": "https://detmir.atlassian.net/browse/CAB-9381", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.2, "q1": 0.021875, "q2": 0.1938461538, "q3": 0.0, "q4": 0.0}, {"project": "Минимальный Нормативный Запас (МНЗ)", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9381", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.05, "q1": 0.00546875, "q2": 0.04846153846, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-01-12", "end": "2026-03-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-04-01", "end": "2026-05-25", "alloc": 0.8, "q1": 0.0, "q2": 0.48, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-26", "end": "2026-08-31", "alloc": 0.3, "q1": 0.0, "q2": 0.12, "q3": 0.2, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Анастасия Емельянова", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-17", "end": "2026-08-31", "alloc": 0.8, "q1": 0.0, "q2": 0.3938461538, "q3": 0.5333333333, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-17", "end": "2026-08-31", "alloc": 0.3, "q1": 0.0, "q2": 0.1476923077, "q3": 0.2, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Хапаев Дмитрий", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-05-25", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-05-04", "end": "2026-09-30", "alloc": 0.3, "q1": 0.0, "q2": 0.1938461538, "q3": 0.3, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Мироничева", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-03-02", "end": "2026-09-30", "alloc": 0.9, "q1": 0.309375, "q2": 0.9, "q3": 0.9, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_GIS_EDO", "manager": "Павел Шакиров", "executor": "Владислав Костин", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.7, "q1": 0.6234375, "q2": 0.7, "q3": 0.7, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Татьяна Магдалина", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-04-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.5, "q3": 0.5, "q4": 0.0}, {"project": "ЭТРН", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.3, "q4": 0.0}, {"project": "Прогнозирование продаж (ML)", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9897", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Прогнозирование продаж (ML)", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9897", "start": "2026-03-02", "end": "2026-12-31", "alloc": 0.1, "q1": 0.034375, "q2": 0.1, "q3": 0.1, "q4": 0.1}, {"project": "Событийный контроль", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5706", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Событийный контроль", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5706", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Промо", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Евгений Савицкий", "cab": "https://detmir.atlassian.net/browse/CAB-9895", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.2, "q1": 0.021875, "q2": 0.1938461538, "q3": 0.0, "q4": 0.0}, {"project": "Промо", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9895", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.05, "q1": 0.00546875, "q2": 0.04846153846, "q3": 0.0, "q4": 0.0}, {"project": "Задачи Автозаказа", "competency": "SAP_LO", "manager": "Компаниченко Владислав", "executor": "Константин Пантелеев", "cab": "https://detmir.atlassian.net/browse/CAB-6798", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.8, "q4": 0.8}, {"project": "Задачи Автозаказа", "competency": "SAP_LO", "manager": "Компаниченко Владислав", "executor": "Евгений Савицкий", "cab": "https://detmir.atlassian.net/browse/CAB-6798", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.8, "q4": 0.8}, {"project": "Бекасово - 3", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-8907", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.2, "q4": 0.0}, {"project": "Бекасово - 3", "competency": "SAP_GIS_EDO", "manager": "Иракли Бурдули", "executor": "Александр Кривоногов", "cab": "https://detmir.atlassian.net/browse/CAB-8907", "start": "2026-01-12", "end": "2026-08-31", "alloc": 1.0, "q1": 0.890625, "q2": 1.0, "q3": 0.6666666667, "q4": 0.0}, {"project": "Разбор задач бэклога", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Елена Смирнова", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 1.0, "q1": 0.890625, "q2": 1.0, "q3": 1.0, "q4": 1.0}, {"project": "Модернизация шкафов выдачи ТСД", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4534", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.1333333333, "q4": 0.0}, {"project": "Модернизация шкафов выдачи ТСД", "competency": "WEB", "manager": "Иракли Бурдули", "executor": "Владимир Иванов", "cab": "https://detmir.atlassian.net/browse/CAB-4534", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.3333333333, "q4": 0.0}, {"project": "Интеграция с агентом ПВЗ Яндекс", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-9677", "start": "2026-04-30", "end": "2026-10-30", "alloc": 0.2, "q1": 0.0, "q2": 0.1353846154, "q3": 0.2, "q4": 0.06666666667}, {"project": "Интеграция с агентом ПВЗ Яндекс", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-9677", "start": "2026-04-30", "end": "2026-10-30", "alloc": 0.2, "q1": 0.0, "q2": 0.1353846154, "q3": 0.2, "q4": 0.06666666667}, {"project": "Интеграция с агентом Почта РФ", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-9611", "start": "2025-10-01", "end": "2026-06-30", "alloc": 0.2, "q1": 0.2, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "X5 - ДМ Экспресс Доставка (LM)", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-10528", "start": "2026-05-01", "end": "2026-10-30", "alloc": 0.1, "q1": 0.0, "q2": 0.06615384615, "q3": 0.1, "q4": 0.03333333333}, {"project": "Продажа поддонов с магазинов", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-5227", "start": "2026-06-07", "end": "2026-07-31", "alloc": 0.05, "q1": 0.0, "q2": 0.01307692308, "q3": 0.01742424242, "q4": 0.0}, {"project": "Продажа поддонов с магазинов", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5227", "start": "2026-06-08", "end": "2026-09-30", "alloc": 0.15, "q1": 0.0, "q2": 0.03923076923, "q3": 0.15, "q4": 0.0}, {"project": "Портал по работе с аутсорсом", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5966", "start": "2026-05-04", "end": "2026-12-31", "alloc": 0.05, "q1": 0.0, "q2": 0.03230769231, "q3": 0.05, "q4": 0.05}, {"project": "Реализация мобильного приложения для  собственных курьеров", "competency": "SAP_LO", "manager": "Илья Троян", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-8483", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Реализация мобильного приложения для  собственных курьеров", "competency": "РП", "manager": "Илья Троян", "executor": "Илья Троян", "cab": "https://detmir.atlassian.net/browse/CAB-8483", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}];
@@ -744,9 +781,20 @@ function renderPlanning(){
   document.getElementById('freeRes').innerHTML = list.length?ah:'<div class="empty">Нет свободных ресурсов по выбранным компетенциям</div>';
 
   // нужен ресурс (строки без исполнителя); прячем полностью прошедшие
+  const inHorizon=r=>months.some(mi=>{
+    if(monthLoad(r,mi)>0.005) return true;
+    // placeholder с alloc=0 — проверяем пересечение дат с горизонтом
+    if(vd(r.start)&&vd(r.end)){
+      const ms=+new Date(2026,mi,1),me=+new Date(2026,mi+1,1);
+      const s=+new Date(r.start),e=+new Date(r.end)+86400000;
+      return Math.min(me,e)>Math.max(ms,s);
+    }
+    return false;
+  });
+  const noComp=r=>!r.competency||r.competency==='—'; // без компетенции — показываем всегда
   const needs=raw.filter(r=> r.executor==='Без назначения'
-      && compsMatch(new Set([r.competency]))
-      && months.some(mi=>monthLoad(r,mi)>0.005));   // есть требуемая загрузка в горизонте
+      && (noComp(r)||compsMatch(new Set([r.competency])))
+      && inHorizon(r));
   let nh='';
   if(!needs.length) nh='<div class="empty">Нет проектов без назначенного ресурса по выбранным компетенциям</div>';
   else needs.forEach(r=>{
@@ -902,6 +950,8 @@ function renderTopOver(rows){
 
 // ---- status ----
 function statusOf(r){
+  if(r._pstatus==='done')    return {cls:'done',label:'Завершён',short:'Завершён'};
+  if(r._pstatus==='planned') return {cls:'plan',label:'Запланирован',short:'Запланирован'};
   if(!vd(r.start) || !vd(r.end)) return {cls:'done',label:'Без срока',short:'—'};
   const end=new Date(r.end), start=new Date(r.start);
   const days=(end-TODAY)/86400000;
@@ -941,7 +991,7 @@ function renderPlan(rows){
     start:(a,b)=>dnum(a,'min')-dnum(b,'min'),
     deadline:(a,b)=>dnum(a,'max')-dnum(b,'max'),
     name:(a,b)=>a.localeCompare(b,'ru'),
-    status:(a,b)=>stRank[statusOf({start:G[a].min,end:G[a].max}).cls]-stRank[statusOf({start:G[b].min,end:G[b].max}).cls] || dnum(a,'max')-dnum(b,'max')
+    status:(a,b)=>stRank[statusOf({start:G[a].min,end:G[a].max,_pstatus:G[a].rows[0]?._pstatus}).cls]-stRank[statusOf({start:G[b].min,end:G[b].max,_pstatus:G[b].rows[0]?._pstatus}).cls] || dnum(a,'max')-dnum(b,'max')
   }[sortKey];
   const keys=Object.keys(G).sort(cmp);
   const capScale = byExec ? Math.max(1.25, ...keys.map(groupLoad)) : 1.25;
@@ -989,7 +1039,7 @@ function renderPlan(rows){
     const gi=DRILL.push({byExec,key,g})-1;
     // aggregate load for the group (sum of planVal over its rows; for project = team load, for exec = personal load)
     const totV=g.rows.reduce((s,r)=>s+planVal(r),0);
-    const st=statusOf({start:g.min,end:g.max});
+    const st=statusOf({start:g.min,end:g.max,_pstatus:g.rows[0]?._pstatus});
     const hasDates=vd(g.min)&&vd(g.max);
     const l=hasDates?pos(g.min):0, w=hasDates?Math.max(1.2,pos(g.max)-l):0;
     const progFrac=hasDates?Math.max(0,Math.min(1,((+TODAY)-(+new Date(g.min)))/((+new Date(g.max))-(+new Date(g.min))||1))):0;
@@ -1041,9 +1091,10 @@ function renderPlan(rows){
       const subs = g.rows.slice().sort((a,b)=> (+new Date(a.start)-+new Date(b.start)) );
       subs.forEach(t=>{
         const v=planVal(t);
-        h+=`<div class="prow sub">
+        h+=`<div class="prow sub edit-row" onclick="openEditAssignment('${t._aid}')">
           <div class="pleft"><div class="ptop"><span class="nm" title="${t.project}">${t.project}</span>
-            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span></div>
+            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
+            <span class="edit-hint">✏</span></div>
             <div class="pbot"><span class="compsm">${t.competency}</span><span class="sep">·</span><span>${fmtDate(t.start)}→${fmtDate(t.end)}</span></div></div>
           ${taskBar(t)}</div>`;
       });
@@ -1061,9 +1112,13 @@ function renderPlan(rows){
         ers.forEach(r=>{ if(vd(r.start)&&(!vd(mn)||r.start<mn))mn=r.start; if(vd(r.end)&&(!vd(mx)||r.end>mx))mx=r.end; });
         const span=(vd(mn)||vd(mx))?(fmtDate(mn)+'→'+fmtDate(mx)):'без срока';
         const nzad=ers.length>1?` <span class="sep">·</span><span>${ers.length} зад.</span>`:'';
-        h+=`<div class="prow sub">
+        const editAct=ers.length===1
+          ? `openEditAssignment('${ers[0]._aid}')`
+          : `openDrillByProject('${ers[0]._pid}')`;
+        h+=`<div class="prow sub edit-row" onclick="${editAct}">
           <div class="pleft"><div class="ptop"><span class="nm" title="${ex}">${ex}</span>
-            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span></div>
+            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
+            <span class="edit-hint">✏</span></div>
             <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nzad}</div></div>
           <div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${monthStripCells(ers)}</div></div>`;
       });
@@ -1112,6 +1167,7 @@ function renderBA(){
 // ---- drill-down modal ----
 let DRILL=[];
 let HM_LAST=[];
+let currentDrillPid=null;
 function openCellDrill(ri, mi){
   const entry=HM_LAST[ri]; if(!entry) return;
   const name=entry[0], v=entry[1];
@@ -1139,11 +1195,14 @@ function openCellDrill(ri, mi){
       <button class="mclose" onclick="closeDrill()">✕</button>
       <div class="mtitle">${name} · ${MONTHS[mi]}</div>
       <div class="mtags"><span class="tagc" style="background:${loadColor(total)};color:#06140f;font-weight:700">${Math.round(total*100)}% загрузка</span>${[...v.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')}</div>
-      <div class="msec">Проекты в этом месяце · ${items.length}</div>
-      ${items.map(o=>`<div class="mrow">
+      <div class="msec">Проекты в этом месяце · ${items.length}<span class="edit-hint"> · клик — карточка проекта</span></div>
+      ${items.map(o=>`<div class="mrow edit-row" onclick="openDrillByProject('${o.r._pid}')">
           <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
             <div class="sub2">${o.r.competency}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
-          <span class="loadpill" style="background:${loadColor(o.load)}">${Math.round(o.load*100)}%</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="loadpill" style="background:${loadColor(o.load)}">${Math.round(o.load*100)}%</span>
+            <span class="edit-hint">→</span>
+          </div>
         </div>`).join('')}
     `;
   }
@@ -1157,9 +1216,10 @@ function qchips(sumsObj){
 function openDrill(idx){
   const d=DRILL[idx]; if(!d) return;
   const {byExec,key,g}=d;
+  if(!byExec) currentDrillPid=g.rows[0]?._pid||null;
   const sums={q1:0,q2:0,q3:0,q4:0};
   g.rows.forEach(r=>QS.forEach(([k])=>sums[k]+=r[k]||0));
-  const st=statusOf({start:g.min,end:g.max});
+  const st=statusOf({start:g.min,end:g.max,_pstatus:g.rows[0]?._pstatus});
   const period = (vd(g.min)||vd(g.max)) ? (fmtDate(g.min)+' → '+fmtDate(g.max)) : 'без срока';
   const dleft = vd(g.max) ? Math.round((+new Date(g.max)-(+TODAY))/86400000) : null;
   const dl = dleft==null ? '—' : (dleft<0?('просрочен '+(-dleft)+' дн'):(dleft+' дн'));
@@ -1173,7 +1233,9 @@ function openDrill(idx){
   const members=Object.entries(memMap).sort((a,b)=>(b[1].q1+b[1].q2+b[1].q3+b[1].q4)-(a[1].q1+a[1].q2+a[1].q3+a[1].q4));
   const tags = byExec
     ? `<span class="statusbadge sb-${st.cls}">${st.label}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
-    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')+cabBadge(cabOf(g.rows));
+      +(g.rows[0]?._rid ? `<button class="tag-edit-btn" onclick="openEditResource('${g.rows[0]._rid}')">✏ ред.</button>` : '')
+    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')+cabBadge(cabOf(g.rows))
+      +`<button class="tag-edit-btn" onclick="openEditProject('${g.rows[0]?._pid}')">✏ ред.</button>`;
   const card=`
     <button class="mclose" onclick="closeDrill()">✕</button>
     <div class="mtitle">${key}</div>
@@ -1185,30 +1247,76 @@ function openDrill(idx){
     </div>
     <div class="msec">Загрузка по кварталам (сумма)</div>
     ${qchips(sums)}
-    <div class="msec" style="margin-top:14px">${byExec?'Проекты исполнителя':'Назначения · '+g.rows.length}<span class="edit-hint">${byExec?'':'· клик — редактировать'}</span></div>
+    <div class="msec" style="margin-top:14px">${byExec?'Проекты исполнителя':'Исполнители · '+members.length}<span class="edit-hint">${byExec?'':'· клик — редактировать'}</span></div>
     ${byExec
       ? members.map(([mk,m])=>`<div class="mrow">
           <div><div class="who">${mk}</div><div class="sub2">${[...m.comps].sort().join(' · ')}${(vd(m.min)||vd(m.max))?' · '+fmtDate(m.min)+'→'+fmtDate(m.max):''}</div></div>
           ${qchips(m)}
         </div>`).join('')
-      : [...g.rows].sort((a,b)=>a.executor.localeCompare(b.executor)).map(r=>`
-          <div class="mrow edit-row" onclick="openEditAssignment('${r._aid}')">
-            <div>
-              <div class="who">${r.executor==='Без назначения'?'<span style="color:var(--c-over)">Без назначения</span>':r.executor}</div>
-              <div class="sub2">${r.competency}${(vd(r.start)||vd(r.end))?' · '+fmtDate(r.start)+'→'+fmtDate(r.end):''}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span class="loadpill" style="background:${loadColor(r.alloc)}">${Math.round(r.alloc*100)}%</span>
-              <span class="edit-hint">✏</span>
-            </div>
-          </div>`).join('')
-        + `<button class="add-row-btn" onclick="openAddAssignment('${g.rows[0]?._pid}')">＋ Добавить исполнителя</button>`
+      : (()=>{
+          const byEx2={};
+          g.rows.forEach(r=>{ (byEx2[r.executor]=byEx2[r.executor]||[]).push(r); });
+          const exSorted=Object.entries(byEx2).sort((a,b)=>{
+            const va=a[1].reduce((s,r)=>s+planVal(r),0), vb=b[1].reduce((s,r)=>s+planVal(r),0);
+            return vb-va;
+          });
+          const hdr=`<div class="dtl-hdr"><div></div><div class="dtl-mh">${MONTHS.map(m=>`<span>${m}</span>`).join('')}</div></div>`;
+          const rows=exSorted.map(([ex,ers])=>{
+            const v=ers.reduce((s,r)=>s+planVal(r),0);
+            const isBez=ex==='Без назначения';
+            const cells=Array.from({length:12},(_,mi)=>{
+              const mv=ers.reduce((s,r)=>s+monthLoad(r,mi),0);
+              const z=mv<=0.005;
+              return `<div class="dtl-cell" style="${z?'':'background:'+loadColor(mv)+';color:#fff'}" title="${MONTHS[mi]}: ${fmtPct(mv)}">${z?'':Math.round(mv*100)}</div>`;
+            }).join('');
+            // всегда: header + сабстроки периодов + кнопка добавить
+            const rid=ers[0]._rid;
+            const periodRows=ers.map(r=>{
+              const dates=(vd(r.start)||vd(r.end))?fmtDate(r.start)+' → '+fmtDate(r.end):'без дат';
+              return `<div class="dtl-period" onclick="openEditAssignment('${r._aid}')">
+                <span class="pdates">${dates}</span>
+                <span class="loadpill" style="background:${loadColor(r.alloc)}">${Math.round(r.alloc*100)}%</span>
+                <span class="edit-hint">✏</span>
+              </div>`;
+            }).join('');
+            return `<div class="dtl-row dtl-row-hdr">
+                <div class="dtl-info">
+                  <span class="who" style="${isBez?'color:var(--c-over)':''}">${ex}</span>
+                  <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
+                </div>
+                <div class="dtl-strip">${cells}</div>
+              </div>
+              <div class="dtl-periods">
+                ${periodRows}
+                <div class="dtl-period dtl-period-add" onclick="openAddAssignment('${g.rows[0]?._pid}','${rid}')">＋ добавить период</div>
+              </div>`;
+          }).join('');
+          return `<div class="drill-tl">${hdr}${rows}</div>
+            <button class="add-row-btn" onclick="openAddAssignment('${g.rows[0]?._pid}')">＋ Добавить исполнителя</button>`;
+        })()
     }
   `;
   document.getElementById('drillCard').innerHTML=card;
   document.getElementById('drill').hidden=false;
 }
-function closeDrill(){ document.getElementById('drill').hidden=true; }
+function closeDrill(){ document.getElementById('drill').hidden=true; currentDrillPid=null; }
+function refreshDrillIfOpen(){
+  if(document.getElementById('drill').hidden||!currentDrillPid) return;
+  openDrillByProject(currentDrillPid);
+}
+
+function openDrillByProject(pid){
+  const rows=ROWS.filter(r=>r._pid===pid);
+  if(!rows.length) return;
+  const g={rows,comps:new Set(),mgrs:new Set(),min:'',max:''};
+  rows.forEach(r=>{
+    g.comps.add(r.competency); g.mgrs.add(r.manager);
+    if(vd(r.start)&&(!vd(g.min)||r.start<g.min)) g.min=r.start;
+    if(vd(r.end)&&(!vd(g.max)||r.end>g.max)) g.max=r.end;
+  });
+  const idx=DRILL.push({byExec:false,key:rows[0].project,g})-1;
+  openDrill(idx);
+}
 
 // ── редактирование назначения ─────────────────────────────────────────────────
 const COMPETENCIES=['SAP EWM','SAP_LO','SAP_OD','SAP BI','SAP_GIS_EDO','CASH','WEB','РП'];
@@ -1240,9 +1348,9 @@ function openEditAssignment(aid){
       </div>
       <div class="ef-2col">
         <div class="ef-row"><label>Начало</label>
-          <input id="ea-start" type="date" class="ef-inp" value="${r.start}"></div>
+          <input id="ea-start" type="date" class="ef-inp" value="${r.start}" onclick="this.showPicker&&this.showPicker()"></div>
         <div class="ef-row"><label>Окончание</label>
-          <input id="ea-end" type="date" class="ef-inp" value="${r.end}"></div>
+          <input id="ea-end" type="date" class="ef-inp" value="${r.end}" onclick="this.showPicker&&this.showPicker()"></div>
       </div>
       <div class="ef-row">
         <label>Загрузка, %</label>
@@ -1266,35 +1374,80 @@ async function saveAssignment(aid){
   const alloc=isNaN(allocPct)?0:allocPct/100;
   const btn=document.getElementById('ea-savebtn');
   btn.disabled=true; btn.textContent='Сохраняю…';
-  await sbWriteAndRefresh(()=>sbUpsert('assignments',{
-    id:aid, resource_id:rid, competency:comp,
-    start_date:start, end_date:end, alloc_percent:alloc,
-  }));
+  try{
+    const {error}=await sb.from('assignments').update({
+      resource_id:rid, competency:comp,
+      start_date:start, end_date:end, alloc_percent:alloc,
+    }).eq('id',aid);
+    if(error) throw error;
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+    refreshDrillIfOpen();
+  }catch(e){
+    btn.disabled=false; btn.textContent='Сохранить';
+    alert('Ошибка сохранения: '+(e.message||e));
+  }
 }
 
 async function deleteAssignment(aid){
   if(!confirm('Удалить это назначение?')) return;
-  await sbWriteAndRefresh(()=>sbDelete('assignments',aid));
+  const row=ROWS.find(r=>r._aid===aid);
+  const pid=row?._pid;
+  try{
+    await sbDelete('assignments',aid);
+    if(pid){
+      const {data}=await sb.from('assignments').select('id').eq('project_id',pid);
+      if(!data||data.length===0){
+        const proj=ALL_PROJECTS.find(p=>p.id===pid);
+        await sb.from('assignments').insert({
+          project_id:pid, resource_id:null,
+          competency:proj?.competency||'', alloc_percent:0,
+          start_date:proj?.start_date||null, end_date:proj?.end_date||null,
+        });
+      }
+    }
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+    refreshDrillIfOpen();
+  }catch(e){
+    alert('Ошибка удаления: '+(e.message||e));
+  }
+}
+
+async function deleteProject(pid){
+  if(!confirm('Удалить проект и все его назначения? Это действие нельзя отменить.')) return;
+  try{
+    const {error:e1}=await sb.from('assignments').delete().eq('project_id',pid);
+    if(e1) throw e1;
+    const {error:e2}=await sb.from('projects').delete().eq('id',pid);
+    if(e2) throw e2;
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+  }catch(e){
+    alert('Ошибка удаления: '+(e.message||e));
+  }
 }
 
 // ── добавление исполнителя в проект ──────────────────────────────────────────
-function openAddAssignment(pid){
+function openAddAssignment(pid, rid=null){
   if(!pid){ alert('Не удалось определить проект'); return; }
+  _periodIdx=0;
   const proj=ALL_PROJECTS.find(p=>p.id===pid);
   const resOpts=ALL_RESOURCES.map(r=>
-    `<option value="${r.id}">${r.name}</option>`
+    `<option value="${r.id}"${r.id===rid?' selected':''}>${r.name}</option>`
   ).join('');
   const compOpts=COMPETENCIES.map(c=>
     `<option value="${c}">${c}</option>`
   ).join('');
+  const title=rid?'Новый период':'Новое назначение';
   openEditModal(`
     <button class="mclose" onclick="closeEditModal()">✕</button>
-    <div class="mtitle">Новое назначение</div>
+    <div class="mtitle">${title}</div>
     <div class="mtags"><span class="tagc comp">${proj?.name??'—'}</span></div>
     <div class="ef">
       <div class="ef-row">
         <label>Исполнитель</label>
-        <select id="aa-rid" class="ef-inp">
+        <select id="aa-rid" class="ef-inp"${rid?'disabled':''}>
           <option value="">— Без назначения —</option>
           ${resOpts}
         </select>
@@ -1303,16 +1456,8 @@ function openAddAssignment(pid){
         <label>Компетенция</label>
         <select id="aa-comp" class="ef-inp">${compOpts}</select>
       </div>
-      <div class="ef-2col">
-        <div class="ef-row"><label>Начало</label>
-          <input id="aa-start" type="date" class="ef-inp"></div>
-        <div class="ef-row"><label>Окончание</label>
-          <input id="aa-end" type="date" class="ef-inp"></div>
-      </div>
-      <div class="ef-row">
-        <label>Загрузка, %</label>
-        <input id="aa-alloc" type="number" class="ef-inp" min="0" max="200" step="5" value="100">
-      </div>
+      <div id="aa-periods" class="ef-periods">${_periodRow(0)}</div>
+      <button type="button" class="ef-add-period" onclick="addPeriodRow()">＋ добавить ещё период</button>
       <div class="ef-actions">
         <button class="ef-save" id="aa-savebtn" onclick="saveAddAssignment('${pid}')">Добавить</button>
         <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
@@ -1324,16 +1469,33 @@ function openAddAssignment(pid){
 async function saveAddAssignment(pid){
   const rid=document.getElementById('aa-rid').value||null;
   const comp=document.getElementById('aa-comp').value;
-  const start=document.getElementById('aa-start').value||null;
-  const end=document.getElementById('aa-end').value||null;
-  const allocPct=parseFloat(document.getElementById('aa-alloc').value);
-  const alloc=isNaN(allocPct)?0:allocPct/100;
   const btn=document.getElementById('aa-savebtn');
+  // собираем все периоды из формы
+  const periodEls=document.querySelectorAll('#aa-periods .ef-period-row');
+  const periods=[];
+  periodEls.forEach(row=>{
+    const idx=row.id.replace('aa-prow-','');
+    const start=document.getElementById(`aa-start-${idx}`)?.value||null;
+    const end=document.getElementById(`aa-end-${idx}`)?.value||null;
+    const allocPct=parseFloat(document.getElementById(`aa-alloc-${idx}`)?.value);
+    periods.push({start,end,alloc:isNaN(allocPct)?0:allocPct/100});
+  });
   btn.disabled=true; btn.textContent='Добавляю…';
-  await sbWriteAndRefresh(()=>sbUpsert('assignments',{
-    project_id:pid, resource_id:rid, competency:comp,
-    start_date:start, end_date:end, alloc_percent:alloc,
-  }));
+  try{
+    if(rid) await sb.from('assignments').delete().eq('project_id',pid).is('resource_id',null);
+    const inserts=periods.map(p=>({
+      project_id:pid, resource_id:rid, competency:comp,
+      start_date:p.start, end_date:p.end, alloc_percent:p.alloc,
+    }));
+    const {error}=await sb.from('assignments').insert(inserts);
+    if(error) throw error;
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+    refreshDrillIfOpen();
+  }catch(e){
+    btn.disabled=false; btn.textContent='Добавить';
+    alert('Ошибка сохранения: '+(e.message||e));
+  }
 }
 
 // ── edit modal ────────────────────────────────────────────────────────────────
@@ -1352,10 +1514,16 @@ let ALL_PROJECTS=[];
 async function loadMeta(){
   const [rRes,pRes]=await Promise.all([
     sb.from('resources').select('id,name,competency').eq('active',true).order('name'),
-    sb.from('projects').select('id,name,manager,competency').order('name')
+    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url').order('name')
   ]);
   if(!rRes.error) ALL_RESOURCES=rRes.data||[];
-  if(!pRes.error) ALL_PROJECTS=pRes.data||[];
+  if(!pRes.error){
+    ALL_PROJECTS=pRes.data||[];
+  } else if(pRes.error?.message?.includes('cab_url')){
+    // колонка ещё не добавлена — откат без cab_url
+    const fallback=await sb.from('projects').select('id,name,manager,competency,status,start_date,end_date').order('name');
+    if(!fallback.error) ALL_PROJECTS=fallback.data||[];
+  }
 }
 
 // ── write-хелперы ─────────────────────────────────────────────────────────────
@@ -1378,6 +1546,189 @@ async function sbWriteAndRefresh(fn){
   }catch(e){
     alert('Ошибка сохранения: '+(e.message||e));
   }
+}
+
+// ── esc helper ────────────────────────────────────────────────────────────────
+function escAttr(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+// ── CRUD: проекты ─────────────────────────────────────────────────────────────
+function _projectForm(p){
+  const isNew=!p;
+  return `
+    <button class="mclose" onclick="closeEditModal()">✕</button>
+    <div class="mtitle">${isNew?'Новый проект':'Редактировать проект'}</div>
+    <div class="ef">
+      <div class="ef-row"><label>Название</label>
+        <input id="ep-name" type="text" class="ef-inp" placeholder="Название проекта" value="${escAttr(p?.name??'')}"></div>
+      <div class="ef-row"><label>Статус</label>
+        <select id="ep-status" class="ef-inp">
+          <option value="active"${(p?.status??'active')==='active'?' selected':''}>В работе</option>
+          <option value="planned"${p?.status==='planned'?' selected':''}>Запланирован</option>
+          <option value="done"${p?.status==='done'?' selected':''}>Завершён</option>
+        </select></div>
+      <div class="ef-2col">
+        <div class="ef-row"><label>Начало</label>
+          <input id="ep-start" type="date" class="ef-inp datepick" value="${escAttr(p?.start_date??'')}" onclick="this.showPicker&&this.showPicker()"></div>
+        <div class="ef-row"><label>Окончание</label>
+          <input id="ep-end" type="date" class="ef-inp datepick" value="${escAttr(p?.end_date??'')}" onclick="this.showPicker&&this.showPicker()"></div>
+      </div>
+      <div class="ef-row"><label>Ссылка CAB / Jira</label>
+        <input id="ep-cab" type="url" class="ef-inp" placeholder="https://jira.…/browse/CAB-1234" value="${escAttr(p?.cab_url??'')}" oninput="updateCabPreview(this.value)">
+        <div id="ep-cab-preview" style="margin-top:6px;min-height:22px">${p?.cab_url?cabBadge(p.cab_url):'<span style="font-size:11px;color:var(--txt3)">вставьте ссылку — появится кнопка</span>'}</div>
+      </div>
+      <div class="ef-actions">
+        <button class="ef-save" id="ep-savebtn" onclick="saveProject(${isNew?'null':`'${p.id}'`})">${isNew?'Создать':'Сохранить'}</button>
+        <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
+        ${!isNew?`<button class="ef-delete" onclick="deleteProject('${p.id}')">Удалить проект</button>`:''}
+      </div>
+    </div>`;
+}
+let _periodIdx=0;
+function _periodRow(idx){
+  return `<div class="ef-period-row" id="aa-prow-${idx}">
+    ${idx>0?`<button type="button" class="ef-period-del" onclick="removePeriodRow(${idx})" title="Удалить период">✕</button>`:''}
+    <div class="ef-2col">
+      <div class="ef-row"><label>Начало</label>
+        <input id="aa-start-${idx}" type="date" class="ef-inp datepick" onclick="this.showPicker&&this.showPicker()"></div>
+      <div class="ef-row"><label>Окончание</label>
+        <input id="aa-end-${idx}" type="date" class="ef-inp datepick" onclick="this.showPicker&&this.showPicker()"></div>
+    </div>
+    <div class="ef-row"><label>Загрузка, %</label>
+      <input id="aa-alloc-${idx}" type="number" class="ef-inp" min="0" max="200" step="5" value="100"></div>
+  </div>`;
+}
+function addPeriodRow(){
+  const c=document.getElementById('aa-periods'); if(!c) return;
+  _periodIdx++;
+  const el=document.createElement('div');
+  el.innerHTML=_periodRow(_periodIdx);
+  c.appendChild(el.firstElementChild);
+}
+function removePeriodRow(idx){
+  const el=document.getElementById(`aa-prow-${idx}`); if(el) el.remove();
+}
+function updateCabPreview(url){
+  const el=document.getElementById('ep-cab-preview'); if(!el) return;
+  const badge=cabBadge(url);
+  el.innerHTML=badge||'<span style="font-size:11px;color:var(--txt3)">вставьте ссылку — появится кнопка</span>';
+}
+function openCreateProject(){ openEditModal(_projectForm(null)); }
+function openEditProject(pid){
+  const p=ALL_PROJECTS.find(pr=>pr.id===pid);
+  if(!p){ alert('Проект не найден'); return; }
+  openEditModal(_projectForm(p));
+}
+async function saveProject(pid){
+  const name=document.getElementById('ep-name').value.trim();
+  if(!name){ alert('Введите название проекта'); return; }
+  const btn=document.getElementById('ep-savebtn');
+  btn.disabled=true; btn.textContent=pid?'Сохраняю…':'Создаю…';
+  const payload={
+    name,
+    manager:    '',
+    competency: '',
+    status:     document.getElementById('ep-status').value||'active',
+    start_date: document.getElementById('ep-start').value||null,
+    end_date:   document.getElementById('ep-end').value||null,
+    cab_url:    document.getElementById('ep-cab').value.trim()||null,
+  };
+  try{
+    if(pid){
+      const {error}=await sb.from('projects').update(payload).eq('id',pid);
+      if(error) throw error;
+      closeEditModal();
+      await Promise.all([loadLive(),loadMeta()]);
+    } else {
+      const {data,error}=await sb.from('projects').insert(payload).select('id').single();
+      if(error) throw error;
+      // сразу создаём placeholder «Без назначения», чтобы проект был виден на дашборде
+      await sb.from('assignments').insert({
+        project_id:data.id, resource_id:null,
+        competency:payload.competency||'', alloc_percent:0,
+        start_date:payload.start_date||null, end_date:payload.end_date||null,
+      });
+      closeEditModal();
+      await Promise.all([loadLive(),loadMeta()]);
+      openAddAssignment(data.id);
+    }
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent=pid?'Сохранить':'Создать';
+    alert('Ошибка сохранения: '+(e.message||e));
+  }
+}
+
+// ── CRUD: ресурсы (исполнители) ───────────────────────────────────────────────
+function _resourceForm(r){
+  const compOpts=COMPETENCIES.map(c=>`<option value="${c}"${c===(r?.competency??'')?' selected':''}>${c}</option>`).join('');
+  const isNew=!r;
+  return `
+    <button class="mclose" onclick="closeEditModal()">✕</button>
+    <div class="mtitle">${isNew?'Новый исполнитель':'Редактировать исполнителя'}</div>
+    <div class="ef">
+      <div class="ef-row"><label>Имя и фамилия</label>
+        <input id="er-name" type="text" class="ef-inp" placeholder="Имя Фамилия" value="${escAttr(r?.name??'')}"></div>
+      <div class="ef-row"><label>Компетенция</label>
+        <select id="er-comp" class="ef-inp"><option value="">—</option>${compOpts}</select></div>
+      <div class="ef-actions">
+        <button class="ef-save" id="er-savebtn" onclick="saveResource(${isNew?'null':`'${r.id}'`})">${isNew?'Создать':'Сохранить'}</button>
+        <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
+        ${!isNew?(r.active
+          ? `<button class="ef-delete" onclick="deactivateResource('${r.id}')">Деактивировать</button>`
+          : `<button class="ef-delete" style="color:var(--accent);border-color:rgba(122,193,67,.4)" onclick="activateResource('${r.id}')">Активировать</button>`)
+        :''}
+      </div>
+    </div>`;
+}
+
+function openCreateResource(){ openEditModal(_resourceForm(null)); }
+
+async function openEditResource(rid){
+  const {data,error}=await sb.from('resources').select('id,name,competency,active').eq('id',rid).single();
+  if(error||!data){ alert('Исполнитель не найден'); return; }
+  openEditModal(_resourceForm(data));
+}
+
+async function saveResource(rid){
+  const name=document.getElementById('er-name').value.trim();
+  if(!name){ alert('Введите имя исполнителя'); return; }
+  const btn=document.getElementById('er-savebtn');
+  btn.disabled=true; btn.textContent=rid?'Сохраняю…':'Создаю…';
+  const payload={ name, competency: document.getElementById('er-comp').value||'' };
+  try{
+    if(rid){
+      const {error}=await sb.from('resources').update(payload).eq('id',rid);
+      if(error) throw error;
+    } else {
+      const {error}=await sb.from('resources').insert({...payload, active:true});
+      if(error) throw error;
+    }
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent=rid?'Сохранить':'Создать';
+    alert('Ошибка сохранения: '+(e.message||e));
+  }
+}
+
+async function deactivateResource(rid){
+  if(!confirm('Деактивировать исполнителя? Он исчезнет из списков для новых назначений, текущие назначения сохранятся.')) return;
+  try{
+    const {error}=await sb.from('resources').update({active:false}).eq('id',rid);
+    if(error) throw error;
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+  }catch(e){ alert('Ошибка: '+(e.message||e)); }
+}
+
+async function activateResource(rid){
+  try{
+    const {error}=await sb.from('resources').update({active:true}).eq('id',rid);
+    if(error) throw error;
+    closeEditModal();
+    await Promise.all([loadLive(),loadMeta()]);
+  }catch(e){ alert('Ошибка: '+(e.message||e)); }
 }
 
 // ---- theme ----
@@ -1425,11 +1776,12 @@ function mapToRows(data){
       _pid:       a.project_id,
       _rid:       a.resource_id,
       _pobj:      a.projects,
+      _pstatus:   a.projects?.status  ?? 'active',
       project:    a.projects?.name    ?? '—',
       executor:   (!a.resources || /без.?назначения/i.test(a.resources.name??'')) ? 'Без назначения' : a.resources.name,
       manager:    a.projects?.manager ?? '—',
       competency: a.competency        ?? '—',
-      cab:        a.cab_url           ?? '',
+      cab:        a.projects?.cab_url || a.cab_url || '',
       start, end, alloc,
       q1:qv(0), q2:qv(1), q3:qv(2), q4:qv(3),
     };
@@ -1441,10 +1793,9 @@ async function loadLive(){
   try{
     const {data,error}=await sb
       .from('assignments')
-      .select('id,project_id,resource_id,competency,cab_url,start_date,end_date,alloc_percent,projects(id,name,manager),resources(id,name)');
+      .select('id,project_id,resource_id,competency,cab_url,start_date,end_date,alloc_percent,projects(id,name,manager,status,cab_url),resources(id,name)');
     if(error) throw error;
     const recs=mapToRows(data);
-    if(recs[0]) console.log('[v2 debug] row[0]:', {q1:recs[0].q1,q2:recs[0].q2,q3:recs[0].q3,q4:recs[0].q4,alloc:recs[0].alloc,start:recs[0].start,end:recs[0].end});
     applyData(recs);
     const t=new Date(),hh=('0'+t.getHours()).slice(-2),mm=('0'+t.getMinutes()).slice(-2);
     setStatus('live','Supabase · '+recs.length+' строк · '+hh+':'+mm);
