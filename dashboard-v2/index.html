@@ -470,16 +470,17 @@ input[type="date"].ef-inp{cursor:pointer}
       <h1>Панель загрузки и сроков</h1>
       <div class="sub">Анализ загрузки исполнителей · контроль сроков · планирование ресурсов</div>
     </div>
-    <button id="themeBtn" class="themebtn" title="Сменить тему">🌙</button>
+    <div style="display:flex;gap:8px;align-self:flex-start">
+      <button onclick="exportExcel()" class="themebtn" title="Выгрузить все данные в Excel">📥</button>
+      <button id="themeBtn" class="themebtn" title="Сменить тему">🌙</button>
+    </div>
   </div>
 </div></header>
 
 <div class="wrap">
   <div class="databar">
-    <button id="syncBtn" class="refresh" style="background:var(--accent);color:#fff;border-color:var(--accent)" title="Загрузить актуальные данные из Google Sheets в базу">⇅ Синхронизировать с таблицей</button>
     <button class="refresh" onclick="openCreateProject()" title="Создать новый проект">＋ Новый проект</button>
     <button class="refresh" onclick="openCreateResource()" title="Добавить нового исполнителя">＋ Исполнитель</button>
-    <button class="refresh" onclick="exportExcel()" title="Выгрузить все данные в Excel">📥 Excel</button>
     <span id="dataStatus" class="dstatus"></span>
   </div>
 
@@ -1834,27 +1835,6 @@ async function loadLive(){
     btn.disabled=false;
   }
 }
-document.getElementById('syncBtn').onclick=async function(){
-  const btn=this; btn.disabled=true; btn.textContent='⇅ Синхронизация…';
-  setStatus('load','синхронизация с Google Sheets…');
-  try{
-    const { data:{ session } } = await sb.auth.getSession();
-    if(!session) throw new Error('не авторизован');
-    const res = await fetch(SUPABASE_URL+'/functions/v1/sync-from-sheets',{
-      method:'POST',
-      headers:{ 'Authorization':'Bearer '+session.access_token, 'Content-Type':'application/json' }
-    });
-    const json = await res.json();
-    if(!res.ok) throw new Error(json.error||'ошибка сервера');
-    const t=new Date(),hh=('0'+t.getHours()).slice(-2),mm=('0'+t.getMinutes()).slice(-2);
-    setStatus('live','синхронизировано · '+json.assignments+' строк · '+hh+':'+mm);
-    await loadLive();
-  }catch(e){
-    setStatus('off','ошибка синхронизации · '+(e.message||'нет связи'));
-  }finally{
-    btn.disabled=false; btn.textContent='⇅ Синхронизировать с таблицей';
-  }
-};
 document.getElementById('themeBtn').onclick=()=>{ state.theme = state.theme==='dark'?'light':'dark'; applyTheme(); };
 document.getElementById('drillBg').onclick=closeDrill;
 document.getElementById('editBg').onclick=closeEditModal;
