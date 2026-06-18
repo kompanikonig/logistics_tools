@@ -4,7 +4,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSDHUAox0LHpdGR
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type' };
 
-const NAME_ALIASES: Record<string, string> = { 'хапаев дмитрий': 'Дмитрий Хапаев' };
+const NAME_ALIASES: Record<string, string> = { 'хапаев дмитрий': 'Дмитрий Хапаев', 'без назначения': 'Без назначения' };
 function normName(name: string): string {
   const key = name.trim().toLowerCase();
   if (NAME_ALIASES[key]) return NAME_ALIASES[key];

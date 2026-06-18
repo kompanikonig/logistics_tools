@@ -212,8 +212,20 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:560px){.wrap{padding:16px 13px 0}h1{font-size:22px}.board{grid-template-columns:1fr}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div id="loginOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border-radius:16px;padding:40px 36px;width:320px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:16px;">
+    <h2 style="margin:0;font-size:1.2rem;color:var(--txt);">Стендап команды</h2>
+    <p style="margin:0;font-size:.85rem;color:var(--txt2);">Введите пароль для входа</p>
+    <input id="loginPass" type="password" placeholder="Пароль" autocomplete="current-password"
+      style="padding:10px 14px;border:1px solid var(--line2);border-radius:8px;font-size:1rem;background:var(--panel2);color:var(--txt);outline:none;">
+    <button id="loginBtn" style="padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:600;">Войти</button>
+    <p id="loginErr" style="margin:0;font-size:.82rem;color:var(--fail);min-height:1em;"></p>
+  </div>
+</div>
+<div id="appWrap" style="display:none;">
 <div class="wrap">
   <header class="top">
     <div>
@@ -254,6 +266,7 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
   <div id="archive"></div>
 </div>
 <div class="toast" id="toast"></div>
+</div><!-- /appWrap -->
 
 <script>
 /* ============================================================
@@ -262,11 +275,11 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
    и тот же токен, что в Code.gs. Пока url пуст — сайт работает
    локально (данные только на этом устройстве).
    ============================================================ */
-const CONFIG = {
-  url:   'https://script.google.com/macros/s/AKfycbzebEgXzL8A0g0R3F1s8LMpmyhhp4ttjAToCwZ9YYZ6xLpq3xK3CK5rNcL8Lm-bZob1/exec',
-  token: '3399ed4fe72da8865dba8cdfd72da25c'
-};
-const POLL_MS = 25000;             // как часто подтягивать чужие правки (мс)
+const SUPABASE_URL  = 'https://esszpbcsdvdgtqauuqku.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMjY4MTgsImV4cCI6MjA2NDYwMjgxOH0.HrvFPJVeHHdKHl9wVKJBd6FWR2jnKlMVVxBnLWRRHlY';
+const LOGIN_EMAIL   = 'kvladislav2703@gmail.com';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const POLL_MS = 25000;
 
 const PEOPLE = ['Иракли Бурдули','Павел Шакиров','Олег Саушкин','Илья Троян','Светлана Климова','Валентина Куренная'];
 const MANAGER = 'Руководитель';   // спец-режим: наблюдатель + сводка команды
@@ -316,51 +329,41 @@ function blankDay(){ const o={people:{}}; PEOPLE.forEach(n=>o.people[n]={status:
 function dayOf(iso){ if(!cache[iso]) cache[iso]=blankDay(); if(!cache[iso].people) cache[iso].people={};
   PEOPLE.forEach(n=>{ if(!cache[iso].people[n]) cache[iso].people[n]={status:'work',note:'',tasks:[]}; }); return cache[iso]; }
 
-// ---------- storage: единый интерфейс (Google Sheets либо локально) ----------
-function backend(){ return CONFIG.url ? 'sheets' : 'local'; }
-
-// Возвращает массив строк: [{date, person, status, note, tasks(JSON-строка)}, ...]
+// ---------- storage: Supabase ----------
 async function apiGetAll(){
-  if(backend()==='sheets'){
-    const res = await fetch(CONFIG.url, {method:'GET'});
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.error||'read failed');
-    return data.rows||[];
-  }
-  // локальный фоллбэк: ключи su:<iso> в localStorage
-  const rows=[];
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i); if(!k || k.indexOf('su:')!==0) continue;
-    try{
-      const day=JSON.parse(localStorage.getItem(k)); const iso=k.slice(3);
-      Object.keys((day&&day.people)||{}).forEach(person=>{
-        const p=day.people[person];
-        rows.push({date:iso,person,status:p.status||'work',note:p.note||'',tasks:JSON.stringify(p.tasks||[])});
-      });
-    }catch(e){}
-  }
-  return rows;
+  const [daysRes, tasksRes] = await Promise.all([
+    sb.from('standup_days').select('person,date,status,note'),
+    sb.from('standup_tasks').select('id,person,date,text,task_status,note,sort_order').order('sort_order')
+  ]);
+  if(daysRes.error) throw daysRes.error;
+  if(tasksRes.error) throw tasksRes.error;
+  const taskMap={};
+  (tasksRes.data||[]).forEach(t=>{
+    const key=t.date+':'+t.person;
+    if(!taskMap[key]) taskMap[key]=[];
+    taskMap[key].push({id:t.id, text:t.text, st:t.task_status||'wip', note:t.note||''});
+  });
+  return (daysRes.data||[]).map(d=>({
+    date:d.date, person:d.person,
+    status:d.status||'work', note:d.note||'',
+    tasks:JSON.stringify(taskMap[d.date+':'+d.person]||[])
+  }));
 }
 
-// Сохраняет ОДНУ запись (мою) за день. rec = {date, person, status, note, tasks(JSON-строка)}
 async function apiSave(rec){
-  if(backend()==='sheets'){
-    const res = await fetch(CONFIG.url, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'}, // text/plain => без CORS-preflight
-      body: JSON.stringify({token:CONFIG.token, action:'save', record:rec})
-    });
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.error||'save failed');
-    return data;
+  const tasks=[]; try{ tasks.push(...JSON.parse(rec.tasks||'[]')); }catch(e){}
+  const {error:e1}=await sb.from('standup_days').upsert(
+    {person:rec.person, date:rec.date, status:rec.status||'work', note:rec.note||'', updated_at:new Date().toISOString()},
+    {onConflict:'person,date'}
+  );
+  if(e1) throw e1;
+  await sb.from('standup_tasks').delete().eq('person',rec.person).eq('date',rec.date);
+  if(tasks.length){
+    const {error:e2}=await sb.from('standup_tasks').insert(
+      tasks.map((t,i)=>({person:rec.person, date:rec.date, text:t.text, task_status:t.st||'wip', note:t.note||'', sort_order:i, updated_at:new Date().toISOString()}))
+    );
+    if(e2) throw e2;
   }
-  // локальный фоллбэк: read-modify-write только своей записи
-  const k='su:'+rec.date;
-  let day; try{ day=JSON.parse(localStorage.getItem(k))||{people:{}}; }catch(e){ day={people:{}}; }
-  if(!day.people) day.people={};
-  let tasks=[]; try{ tasks=JSON.parse(rec.tasks||'[]'); }catch(e){ tasks=[]; }
-  day.people[rec.person]={status:rec.status||'work',note:rec.note||'',tasks};
-  localStorage.setItem(k, JSON.stringify(day));
   return {ok:true};
 }
 
@@ -426,24 +429,12 @@ function saveMe(){ try{ localStorage.setItem('standup_me', me); }catch(e){} }
 function setSync(state){
   const el=document.getElementById('syncNote'); if(!el) return;
   el.className='note-shared';
-  if(backend()==='local'){
-    el.classList.add('warn');
-    el.textContent='⚠ общий доступ не настроен — данные только на этом устройстве';
-    return;
-  }
   const t=new Date(), hh=pad(t.getHours())+':'+pad(t.getMinutes());
   if(state==='busy'){ el.classList.add('busy'); el.textContent='🟡 сохраняю…'; }
   else if(state==='error'){ el.classList.add('err'); el.textContent='🔴 нет связи — данные не сохранены'; }
   else { el.textContent='🟢 синхронизировано · '+hh; }
 }
-function showConfigBar(){
-  const bar=document.getElementById('cfgbar');
-  if(backend()==='local'){
-    bar.innerHTML='Хранилище не настроено. Сайт работает локально (данные не видны команде). '+
-      'Впишите URL Apps Script и токен в блок <code>CONFIG</code> вверху <code>&lt;script&gt;</code> и обновите страницу.';
-    bar.classList.add('show');
-  }else{ bar.classList.remove('show'); }
-}
+function showConfigBar(){ document.getElementById('cfgbar').classList.remove('show'); }
 
 // ---------- rendering ----------
 function statusCounts(day){
@@ -777,9 +768,36 @@ async function init(){
   document.getElementById('themeBtn').onclick=()=>{ document.body.classList.toggle('dark');
     document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'☀️':'🌙'; };
   renderAll();
-  if(backend()==='sheets') setInterval(()=>pollRefresh(false), POLL_MS);
+  setInterval(()=>pollRefresh(false), POLL_MS);
 }
-init();
+// ---------- auth ----------
+async function doLogin(){
+  const pass=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginErr');
+  const btn=document.getElementById('loginBtn');
+  err.textContent=''; btn.disabled=true; btn.textContent='Вхожу…';
+  const {error}=await sb.auth.signInWithPassword({email:LOGIN_EMAIL, password:pass});
+  btn.disabled=false; btn.textContent='Войти';
+  if(error){ err.textContent='Неверный пароль'; return; }
+  showApp();
+}
+function showApp(){
+  document.getElementById('loginOverlay').style.display='none';
+  document.getElementById('appWrap').style.display='';
+  init();
+}
+function showLogin(){
+  document.getElementById('loginOverlay').style.display='flex';
+  document.getElementById('appWrap').style.display='none';
+}
+
+// ---------- start ----------
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) showApp(); else showLogin();
+  document.getElementById('loginBtn').onclick=doLogin;
+  document.getElementById('loginPass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+})();
 </script>
 </body>
 </html>
