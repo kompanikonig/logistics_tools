@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#eef2f7; --bg2:#e9eef6; --panel:#ffffff; --panel2:#f4f7fb;
@@ -478,6 +479,7 @@ input[type="date"].ef-inp{cursor:pointer}
     <button id="syncBtn" class="refresh" style="background:var(--accent);color:#fff;border-color:var(--accent)" title="Загрузить актуальные данные из Google Sheets в базу">⇅ Синхронизировать с таблицей</button>
     <button class="refresh" onclick="openCreateProject()" title="Создать новый проект">＋ Новый проект</button>
     <button class="refresh" onclick="openCreateResource()" title="Добавить нового исполнителя">＋ Исполнитель</button>
+    <button class="refresh" onclick="exportExcel()" title="Выгрузить все данные в Excel">📥 Excel</button>
     <span id="dataStatus" class="dstatus"></span>
   </div>
 
@@ -1786,6 +1788,33 @@ function mapToRows(data){
       q1:qv(0), q2:qv(1), q3:qv(2), q4:qv(3),
     };
   });
+}
+function exportExcel(){
+  if(!ROWS||!ROWS.length){ alert('Нет данных для выгрузки'); return; }
+  const pct=v=>v>0?Math.round(v*100):0;
+  const rows=ROWS.map(r=>({
+    'Исполнитель':       r.executor==='Без назначения'?'':r.executor,
+    'Название проекта':  r.project,
+    'Компетенция':       r.competency==='—'?'':r.competency,
+    'Руководитель':      r.manager==='—'?'':r.manager,
+    'Статус':            statusOf(r).label,
+    'Начало':            r.start||'',
+    'Окончание':         r.end||'',
+    'Выделено %':        pct(r.alloc),
+    'Q1':                pct(r.q1||0),
+    'Q2':                pct(r.q2||0),
+    'Q3':                pct(r.q3||0),
+    'Q4':                pct(r.q4||0),
+    'CAB':               r.cab||'',
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  // ширина колонок
+  ws['!cols']=[{wch:22},{wch:40},{wch:14},{wch:22},{wch:14},{wch:12},{wch:12},{wch:11},{wch:7},{wch:7},{wch:7},{wch:7},{wch:45}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Данные');
+  const d=new Date();
+  const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb,`логистика_${ds}.xlsx`);
 }
 async function loadLive(){
   const btn={disabled:false};
