@@ -215,6 +215,7 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 @media(max-width:560px){.wrap{padding:16px 13px 0}h1{font-size:22px}.board{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="loginOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;">
@@ -239,6 +240,7 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
       <div class="who"><label>Я</label>
         <select id="meSel"></select>
       </div>
+      <button class="btn icon" id="exportBtn" title="Выгрузить в Excel">📥</button>
       <button class="btn icon" id="themeBtn" title="Тема">🌙</button>
     </div>
   </header>
@@ -273,10 +275,9 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 
 <script>
 /* ============================================================
-   НАСТРОЙКА ОБЩЕГО ХРАНИЛИЩА (Google Sheets через Apps Script)
-   Впишите сюда URL вашего Apps Script Web App (заканчивается на /exec)
-   и тот же токен, что в Code.gs. Пока url пуст — сайт работает
-   локально (данные только на этом устройстве).
+   НАСТРОЙКА ОБЩЕГО ХРАНИЛИЩА (Supabase)
+   Таблицы standup_days / standup_tasks. Логин — тот же Supabase
+   Auth пользователь, что и в dashboard/index.html.
    ============================================================ */
 const SUPABASE_URL  = 'https://esszpbcsdvdgtqauuqku.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
@@ -736,6 +737,28 @@ function shiftDay(delta){
   cur = dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate()); renderAll();
 }
 
+// ---------- экспорт в Excel ----------
+async function exportExcel(){
+  let rows;
+  try{ rows = await apiGetAll(); }
+  catch(e){ alert('Не удалось загрузить данные: '+(e.message||e)); return; }
+  if(!rows.length){ alert('Нет данных для выгрузки'); return; }
+  const out=[];
+  rows.forEach(r=>{
+    let tasks=[]; try{ tasks=JSON.parse(r.tasks||'[]'); }catch(e){}
+    const base={'Дата':r.date,'Сотрудник':r.person,'Статус дня':DS_LABEL[r.status]||r.status,'Комментарий дня':r.note||''};
+    if(!tasks.length){ out.push({...base,'Задача':'','Статус задачи':'','Комментарий задачи':''}); return; }
+    tasks.forEach(t=>out.push({...base,'Задача':t.text,'Статус задачи':ST_LABEL[t.st]||t.st,'Комментарий задачи':t.note||''}));
+  });
+  out.sort((a,b)=> a['Дата']<b['Дата']?-1 : a['Дата']>b['Дата']?1 : a['Сотрудник'].localeCompare(b['Сотрудник']));
+  const ws=XLSX.utils.json_to_sheet(out);
+  ws['!cols']=[{wch:12},{wch:22},{wch:12},{wch:26},{wch:50},{wch:14},{wch:30}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Стендап');
+  const d=new Date();
+  const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb,`стендап_${ds}.xlsx`);
+}
 // ---------- init ----------
 function buildMeSelect(){
   const sel=document.getElementById('meSel');
@@ -768,6 +791,7 @@ async function init(){
   });
   document.getElementById('carryBtn').onclick=carryOver;
   document.getElementById('syncBtn').onclick=()=>pollRefresh(true);
+  document.getElementById('exportBtn').onclick=exportExcel;
   document.getElementById('themeBtn').onclick=()=>{ document.body.classList.toggle('dark');
     document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'☀️':'🌙'; };
   renderAll();
