@@ -423,7 +423,6 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 
 <div class="wrap">
   <div class="databar">
-    <button id="refreshBtn" class="refresh">↻ Обновить данные</button>
     <button id="syncBtn" class="refresh" style="background:var(--accent);color:#fff;border-color:var(--accent)" title="Загрузить актуальные данные из Google Sheets в базу">⇅ Синхронизировать с таблицей</button>
     <span id="dataStatus" class="dstatus"></span>
   </div>
@@ -1201,7 +1200,7 @@ function mapToRows(data){
   }));
 }
 async function loadLive(){
-  const btn=document.getElementById('refreshBtn'); btn.disabled=true;
+  const btn={disabled:false};
   setStatus('load','загрузка из Supabase…');
   try{
     const {data,error}=await sb
@@ -1218,7 +1217,6 @@ async function loadLive(){
     btn.disabled=false;
   }
 }
-document.getElementById('refreshBtn').onclick=loadLive;
 document.getElementById('syncBtn').onclick=async function(){
   const btn=this; btn.disabled=true; btn.textContent='⇅ Синхронизация…';
   setStatus('load','синхронизация с Google Sheets…');
