@@ -742,17 +742,15 @@ function renderKPI(rows){
   const lm=execLoadMap(rows.filter(r=>r.executor!=='Без назначения'));
   const execs=Object.keys(lm);
   const unassignedRows=rows.filter(r=>r.executor==='Без назначения');
-  const unassigned=unassignedRows.reduce((s,r)=>{
-    if(isAll){ let t=0; for(let mi=0;mi<12;mi++) t+=monthLoad(r,mi); return s+t/12; }
-    const qi=QS.findIndex(([k])=>k===state.q); const m0=qi*3;
-    let t=0; for(let mi=m0;mi<m0+3;mi++) t+=monthLoad(r,mi);
-    return s+t/3;
-  },0);
+  const unassigned=unassignedRows.filter(r=>{
+    for(let mi=0;mi<12;mi++) if(monthLoad(r,mi)>0.001) return true;
+    return r.alloc>0;
+  }).length;
   const projs=new Set(rows.map(r=>r.project)).size;
   const k=[
     {v:projs,l:'Проектов в выборке',u:'активных направлений',cls:''},
     {v:execs.length,l:'Занятых исполнителей',u:isAll?'за год':'в этом квартале',cls:''},
-    {v:unassigned>0?fmtPct(unassigned):'—',l:'Без назначения',u:isAll?'нужно распределить · за год':'нужно распределить',cls:unassigned>0?'warn':''},
+    {v:unassigned>0?unassigned:'—',l:'Без назначения',u:'позиций нужен ресурс',cls:unassigned>0?'warn':''},
   ];
   document.getElementById('kpis').innerHTML=k.map(x=>
     `<div class="kpi ${x.cls}"><div class="v">${x.v}</div><div class="l">${x.l}</div><div class="u">${x.u}</div></div>`).join('');
@@ -773,8 +771,7 @@ function zoneOf(v){ if(v<=0.005)return 'zero'; if(v<0.5)return 'low'; if(v<0.85)
 function renderHeatmap(){
   const raw=rawFiltered();
   const byExec={};
-  raw.forEach(r=>{ if(r.executor==='Без назначения') return;
-    if(!byExec[r.executor]) byExec[r.executor]={m:Array(12).fill(0),comps:new Set(),rows:[]};
+  raw.forEach(r=>{ if(!byExec[r.executor]) byExec[r.executor]={m:Array(12).fill(0),comps:new Set(),rows:[]};
     for(let mi=0;mi<12;mi++) byExec[r.executor].m[mi]+=monthLoad(r,mi);
     byExec[r.executor].comps.add(r.competency); byExec[r.executor].rows.push(r); });
   const sum=v=>v.m.reduce((x,y)=>x+y,0);
