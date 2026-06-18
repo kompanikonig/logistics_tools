@@ -1379,6 +1379,7 @@ async function loadLive(){
       .select('id,project_id,resource_id,competency,cab_url,start_date,end_date,alloc_percent,projects(id,name,manager),resources(id,name)');
     if(error) throw error;
     const recs=mapToRows(data);
+    if(recs[0]) console.log('[v2 debug] row[0]:', {q1:recs[0].q1,q2:recs[0].q2,q3:recs[0].q3,q4:recs[0].q4,alloc:recs[0].alloc,start:recs[0].start,end:recs[0].end});
     applyData(recs);
     const t=new Date(),hh=('0'+t.getHours()).slice(-2),mm=('0'+t.getMinutes()).slice(-2);
     setStatus('live','Supabase · '+recs.length+' строк · '+hh+':'+mm);
