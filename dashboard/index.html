@@ -741,8 +741,13 @@ function renderKPI(rows){
   const isAll=state.q==='all';
   const lm=execLoadMap(rows.filter(r=>r.executor!=='Без назначения'));
   const execs=Object.keys(lm);
-  const unassigned=rows.filter(r=>r.executor==='Без назначения')
-    .reduce((s,r)=>s+(isAll?(r.q1+r.q2+r.q3+r.q4)/4:(r[state.q]||0)),0);
+  const unassignedRows=rows.filter(r=>r.executor==='Без назначения');
+  const unassigned=unassignedRows.reduce((s,r)=>{
+    if(isAll){ let t=0; for(let mi=0;mi<12;mi++) t+=monthLoad(r,mi); return s+t/12; }
+    const qi=QS.findIndex(([k])=>k===state.q); const m0=qi*3;
+    let t=0; for(let mi=m0;mi<m0+3;mi++) t+=monthLoad(r,mi);
+    return s+t/3;
+  },0);
   const projs=new Set(rows.map(r=>r.project)).size;
   const k=[
     {v:projs,l:'Проектов в выборке',u:'активных направлений',cls:''},
@@ -768,7 +773,8 @@ function zoneOf(v){ if(v<=0.005)return 'zero'; if(v<0.5)return 'low'; if(v<0.85)
 function renderHeatmap(){
   const raw=rawFiltered();
   const byExec={};
-  raw.forEach(r=>{ if(!byExec[r.executor]) byExec[r.executor]={m:Array(12).fill(0),comps:new Set(),rows:[]};
+  raw.forEach(r=>{ if(r.executor==='Без назначения') return;
+    if(!byExec[r.executor]) byExec[r.executor]={m:Array(12).fill(0),comps:new Set(),rows:[]};
     for(let mi=0;mi<12;mi++) byExec[r.executor].m[mi]+=monthLoad(r,mi);
     byExec[r.executor].comps.add(r.competency); byExec[r.executor].rows.push(r); });
   const sum=v=>v.m.reduce((x,y)=>x+y,0);
