@@ -172,9 +172,9 @@ input[type=text]{min-width:220px}
 .pcard:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:var(--shadow)}
 .pcard .pt{font-size:15px;font-weight:600;line-height:1.25;margin-bottom:10px}
 .pcard .pmeta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
-.tagc{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--line2);color:var(--txt2)}
-.tagc.mgr{color:#0277b6;border-color:rgba(0,163,224,.35)}
-.tagc.comp{color:var(--accent-d);border-color:rgba(122,193,67,.3)}
+.tagc{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:5px;background:transparent;border:1px solid var(--line2);color:var(--txt2)}
+.tagc.mgr{color:var(--txt2);border-color:var(--line2)}
+.tagc.comp{color:var(--txt2);border-color:var(--line2)}
 .pdates{font-family:var(--mono);font-size:11.5px;color:var(--txt2);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .status{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
 .status.plan{background:rgba(0,163,224,.15);color:#0277b6}
@@ -325,13 +325,14 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 .modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
 .modal[hidden]{display:none}
 .modal-bg{position:absolute;inset:0;background:rgba(15,21,30,.55);backdrop-filter:blur(2px);animation:fade .15s ease}
-.modal-card{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:18px;box-shadow:0 24px 70px rgba(15,30,55,.35);
-  max-width:680px;width:100%;max-height:86vh;overflow:auto;padding:24px;animation:pop .16s cubic-bezier(.2,.9,.3,1.2)}
+.modal-card{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:14px;box-shadow:0 1px 2px rgba(15,30,55,.06),0 16px 40px rgba(15,30,55,.12);
+  max-width:680px;width:100%;max-height:86vh;overflow:auto;padding:28px;animation:pop .18s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
-.mclose{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);
-  background:var(--panel2);color:var(--txt2);font-size:16px;cursor:pointer;transition:.15s}
-.mclose:hover{color:var(--c-over);border-color:var(--c-over)}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.mclose{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:7px;border:1px solid transparent;
+  background:transparent;color:var(--txt3);font-size:15px;cursor:pointer;transition:.2s}
+.mclose:hover{color:var(--txt);background:var(--bg2)}
+.mclose:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* edit forms */
 .ef{display:flex;flex-direction:column;gap:14px}
 .ef-row{display:flex;flex-direction:column;gap:5px}
@@ -353,28 +354,33 @@ input[type="date"].ef-inp{cursor:pointer}
 .edit-row{cursor:pointer;transition:background .12s;border-radius:8px}
 .edit-row:hover{background:var(--panel2)}
 .edit-hint{font-size:11px;color:var(--txt3);margin-left:4px;opacity:.7}
-.add-row-btn{display:flex;align-items:center;gap:7px;width:100%;margin-top:6px;padding:10px 14px;background:transparent;border:1.5px dashed var(--line2);border-radius:10px;color:var(--txt3);font-size:13.5px;cursor:pointer;transition:border-color .15s,color .15s}
+.add-row-btn{display:flex;align-items:center;gap:7px;width:100%;margin-top:6px;padding:10px 14px;background:transparent;border:1.5px dashed var(--line2);border-radius:10px;color:var(--txt3);font-size:13.5px;cursor:pointer;transition:border-color .2s,color .2s}
 .add-row-btn:hover{border-color:var(--accent);color:var(--accent)}
-.tag-edit-btn{font-size:11px;padding:3px 9px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--txt2);cursor:pointer;vertical-align:middle;margin-left:4px;transition:border-color .15s,color .15s}
+.add-row-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag-edit-btn{font-size:11px;padding:3px 9px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--txt2);cursor:pointer;vertical-align:middle;margin-left:4px;transition:border-color .2s,color .2s}
 .tag-edit-btn:hover{border-color:var(--accent);color:var(--accent)}
-.drill-tl{margin:6px 0 0;overflow-x:auto}
-.dtl-hdr{display:grid;grid-template-columns:190px 1fr;gap:8px;padding-bottom:3px}
+.tag-edit-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.drill-tl{margin:8px 0 0;overflow-x:auto;border-top:1px solid var(--line)}
+.dtl-hdr{display:grid;grid-template-columns:190px 1fr;gap:8px;padding:10px 0 6px}
 .dtl-mh{display:grid;grid-template-columns:repeat(12,1fr);gap:2px}
 .dtl-mh span{font-size:9px;color:var(--txt3);text-align:center}
-.dtl-row{display:grid;grid-template-columns:190px 1fr;align-items:center;gap:8px;border-top:1px solid var(--line);padding:4px 0;cursor:pointer;border-radius:6px;transition:background .12s}
+.dtl-row{display:grid;grid-template-columns:190px 1fr;align-items:center;gap:8px;padding:7px 0;cursor:pointer;border-radius:8px;transition:background .2s}
 .dtl-row:hover{background:var(--bg2)}
+.dtl-row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .dtl-info{display:flex;align-items:center;gap:6px;font-size:13px;overflow:hidden;padding:3px 4px}
 .dtl-info .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dtl-strip{display:grid;grid-template-columns:repeat(12,1fr);gap:2px}
-.dtl-cell{height:26px;border-radius:4px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--line2);color:var(--txt3)}
+.dtl-cell{height:24px;border-radius:4px;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;background:var(--bg2);color:var(--txt3)}
 .dtl-row-hdr{cursor:default}
 .dtl-row-hdr:hover{background:transparent}
-.dtl-periods{padding:0 4px 6px 16px;display:flex;flex-direction:column;gap:2px}
-.dtl-period{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px;transition:background .12s}
+.dtl-periods{padding:2px 4px 12px 16px;display:flex;flex-direction:column;gap:3px}
+.dtl-period{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:12px;transition:background .2s}
 .dtl-period:hover{background:var(--bg2)}
+.dtl-period:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .dtl-period .pdates{color:var(--txt2);flex:1;min-width:0}
-.dtl-period-add{color:var(--accent);font-weight:600;border:1px dashed var(--line2);justify-content:center;margin-top:2px}
+.dtl-period-add{color:var(--accent);font-weight:600;border:1px dashed var(--line2);justify-content:center;margin-top:4px}
 .dtl-period-add:hover{border-color:var(--accent);background:transparent}
+.dtl-period-add:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ef-periods{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
 .ef-period-row{background:var(--bg2);border-radius:10px;padding:10px 12px;position:relative}
 .ef-period-del{position:absolute;top:6px;right:10px;background:none;border:none;cursor:pointer;font-size:15px;color:var(--txt3);line-height:1}
@@ -382,18 +388,28 @@ input[type="date"].ef-inp{cursor:pointer}
 .ef-add-period{background:none;border:1px dashed var(--line2);color:var(--accent);width:100%;padding:8px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:border-color .15s,background .15s;margin-bottom:4px}
 .ef-add-period:hover{border-color:var(--accent);background:var(--bg2)}
 .mtitle{font-family:var(--disp);font-weight:800;font-size:19px;letter-spacing:-.3px;padding-right:38px;line-height:1.2}
-.mtags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 14px}
-.mstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
-.mstat .b{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
-.mstat .b .v{font-family:var(--disp);font-weight:800;font-size:18px}
-.mstat .b .l{font-size:10.5px;color:var(--txt2);margin-top:3px}
-.mrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.mtags{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 22px}
+.mstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:24px;margin-bottom:24px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.mstat .b{background:transparent;border:none;padding:0 0 0 20px;border-left:1px solid var(--line)}
+.mstat .b:first-child{padding-left:0;border-left:none}
+.mstat .b .v{font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:-.2px}
+.mstat .b .l{font-size:10px;color:var(--txt3);margin-top:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .mrow .who{font-size:13.5px;font-weight:600}
 .mrow .sub2{font-family:var(--mono);font-size:10.5px;color:var(--txt2);margin-top:2px}
 .mq{display:flex;gap:5px}
-.mqc{font-family:var(--mono);font-size:10.5px;font-weight:700;color:#0c1410;border-radius:6px;padding:4px 7px;min-width:42px;text-align:center}
+.mqc{font-family:var(--mono);font-size:10.5px;font-weight:700;color:#0c1410;border-radius:5px;padding:4px 7px;min-width:42px;text-align:center}
 .mqc .qn{display:block;font-size:8px;font-weight:500;color:rgba(0,0,0,.5)}
-.msec{font-family:var(--mono);font-size:10.5px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin:6px 0 2px}
+.msec{font-family:var(--mono);font-size:10.5px;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;margin:20px 0 8px}
+.status-report{font-size:13px;line-height:1.55;color:var(--txt2);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;max-height:280px;overflow:auto}
+.status-report p{margin:0 0 8px}
+.status-report p:last-child{margin-bottom:0}
+.status-report b,.status-report strong{color:var(--txt);font-weight:700}
+.status-report a{color:var(--accent-d);text-decoration:underline}
+.status-report table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12px}
+.status-report td,.status-report th{border:1px solid var(--line2);padding:4px 7px;text-align:left}
+.status-report ol,.status-report ul{margin:0 0 8px;padding-left:20px}
+.status-report img.emoticon{vertical-align:middle}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}.barrow{grid-template-columns:130px 1fr 56px}.barrow .nm{font-size:12px}}
 @media(max-width:640px){
@@ -481,6 +497,7 @@ input[type="date"].ef-inp{cursor:pointer}
   <div class="databar">
     <button class="refresh" onclick="openCreateProject()" title="Создать новый проект">＋ Новый проект</button>
     <button class="refresh" onclick="openCreateResource()" title="Добавить нового исполнителя">＋ Исполнитель</button>
+    <button class="refresh" id="jiraSyncBtn" onclick="syncFromJira()" title="Подтянуть статус-отчёты из Jira по всем проектам">⇅ Статус-отчёты из Jira</button>
     <span id="dataStatus" class="dstatus"></span>
   </div>
 
@@ -579,15 +596,23 @@ async function doLogin(){
   const err = document.getElementById('loginErr');
   if(!pwd){ err.textContent='Введите пароль'; return; }
   btn.disabled = true; btn.textContent = 'Проверка…'; err.textContent = '';
-  const hash = await sha256(pwd);
-  if(hash === PASS_HASH){
-    localStorage.setItem(AUTH_KEY, hash);
-    showDashboard();
-    loadLive();
-  } else {
-    btn.disabled = false; btn.textContent = 'Войти';
+  try{
+    if(!window.isSecureContext || !crypto.subtle) throw new Error('insecure-context');
+    const hash = await sha256(pwd);
+    if(hash === PASS_HASH){
+      localStorage.setItem(AUTH_KEY, hash);
+      showDashboard();
+      loadLive();
+      return;
+    }
     err.textContent = 'Неверный пароль';
     document.getElementById('loginPwd').select();
+  }catch(e){
+    err.textContent = e.message==='insecure-context'
+      ? 'Откройте страницу по https:// или через сервер, не файлом напрямую'
+      : 'Ошибка проверки пароля: '+(e.message||e);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Войти';
   }
 }
 document.getElementById('loginBtn').onclick = doLogin;
@@ -1298,6 +1323,10 @@ function openDrill(idx){
             <button class="add-row-btn" onclick="openAddAssignment('${g.rows[0]?._pid}')">＋ Добавить исполнителя</button>`;
         })()
     }
+    ${(!byExec && ALL_PROJECTS.find(p=>p.id===g.rows[0]?._pid)?.status_report) ? `
+      <div class="msec" style="margin-top:14px">Статус отчёт <span class="edit-hint">· из Jira</span></div>
+      <div class="status-report">${ALL_PROJECTS.find(p=>p.id===g.rows[0]?._pid).status_report}</div>
+    ` : ''}
   `;
   document.getElementById('drillCard').innerHTML=card;
   document.getElementById('drill').hidden=false;
@@ -1517,7 +1546,7 @@ let ALL_PROJECTS=[];
 async function loadMeta(){
   const [rRes,pRes]=await Promise.all([
     sb.from('resources').select('id,name,competency').eq('active',true).order('name'),
-    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url').order('name')
+    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url,status_report').order('name')
   ]);
   if(!rRes.error) ALL_RESOURCES=rRes.data||[];
   if(!pRes.error){
@@ -1789,6 +1818,25 @@ function mapToRows(data){
       q1:qv(0), q2:qv(1), q3:qv(2), q4:qv(3),
     };
   });
+}
+async function syncFromJira(){
+  const btn=document.getElementById('jiraSyncBtn');
+  btn.disabled=true; btn.textContent='⇅ Синхронизация…';
+  try{
+    const res=await fetch(SUPABASE_URL+'/functions/v1/sync-from-jira',{
+      method:'POST', headers:{ apikey:SUPABASE_ANON_KEY }
+    });
+    const json=await res.json();
+    if(!res.ok) throw new Error(json.error||'ошибка сервера');
+    await Promise.all([loadLive(),loadMeta()]);
+    refreshDrillIfOpen();
+    const failed=(json.errors||[]).length;
+    alert(`Готово: обновлено ${json.updated} из ${json.total}`+(failed?`, ошибок: ${failed}`:''));
+  }catch(e){
+    alert('Ошибка синхронизации с Jira: '+(e.message||e));
+  }finally{
+    btn.disabled=false; btn.textContent='⇅ Статус-отчёты из Jira';
+  }
 }
 function exportExcel(){
   if(!ROWS||!ROWS.length){ alert('Нет данных для выгрузки'); return; }
