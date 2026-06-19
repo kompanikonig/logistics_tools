@@ -658,6 +658,10 @@ const palette = ['#6b9bc3','#86a96b','#d4a85a','#cc8072','#9487bb','#5f7e9e','#c
 let state = {q:'all', view:'over', mgrs:[], comps:[], tags:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future'};
 const TAGS_LIST = ['Склад','Транспорт','Курьерская доставка'];
 const MANAGERS_LIST = ['Павел Шакиров','Олег Саушкин','Иракли Бурдули','Компаниченко Владислав','Илья Троян'];
+function managersOptions(){
+  const fromData=(ALL_PROJECTS||[]).map(p=>p.manager).filter(Boolean);
+  return [...new Set([...MANAGERS_LIST,...fromData])].sort((a,b)=>a.localeCompare(b,'ru'));
+}
 
 // ---- helpers ----
 function loadColor(v){
@@ -1688,11 +1692,10 @@ function _projectForm(p){
           <option value="done"${p?.status==='done'?' selected':''}>Завершён</option>
         </select></div>
       <div class="ef-row"><label>РП (руководитель проекта)</label>
-        <select id="ep-manager" class="ef-inp">
-          <option value="">— не выбран —</option>
-          ${[...new Set([...MANAGERS_LIST, p?.manager].filter(Boolean))].map(m=>
-            `<option value="${escAttr(m)}"${p?.manager===m?' selected':''}>${m}</option>`).join('')}
-        </select></div>
+        <input id="ep-manager" type="text" class="ef-inp" list="managersDatalist" placeholder="Введите имя РП" value="${escAttr(p?.manager??'')}">
+        <datalist id="managersDatalist">
+          ${managersOptions().map(m=>`<option value="${escAttr(m)}">`).join('')}
+        </datalist></div>
       <div class="ef-2col">
         <div class="ef-row"><label>Начало</label>
           <input id="ep-start" type="date" class="ef-inp datepick" value="${escAttr(p?.start_date??'')}" onclick="this.showPicker&&this.showPicker()"></div>
@@ -1758,7 +1761,7 @@ async function saveProject(pid){
   const tags=[...document.querySelectorAll('#ep-tags input:checked')].map(i=>i.value);
   const payload={
     name,
-    manager:    document.getElementById('ep-manager').value||'',
+    manager:    document.getElementById('ep-manager').value.trim()||'',
     competency: '',
     status:     document.getElementById('ep-status').value||'active',
     start_date: document.getElementById('ep-start').value||null,
