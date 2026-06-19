@@ -1822,6 +1822,7 @@ function mapToRows(data){
 async function syncFromJira(){
   const btn=document.getElementById('jiraSyncBtn');
   btn.disabled=true; btn.textContent='⇅ Синхронизация…';
+  setStatus('load','синхронизация с Jira…');
   try{
     const res=await fetch(SUPABASE_URL+'/functions/v1/sync-from-jira',{
       method:'POST', headers:{ apikey:SUPABASE_ANON_KEY }
@@ -1831,9 +1832,10 @@ async function syncFromJira(){
     await Promise.all([loadLive(),loadMeta()]);
     refreshDrillIfOpen();
     const failed=(json.errors||[]).length;
-    alert(`Готово: обновлено ${json.updated} из ${json.total}`+(failed?`, ошибок: ${failed}`:''));
+    const t=new Date(),hh=('0'+t.getHours()).slice(-2),mm=('0'+t.getMinutes()).slice(-2);
+    setStatus(failed?'load':'live', `Jira: обновлено ${json.updated} из ${json.total}`+(failed?`, ошибок: ${failed}`:'')+` · ${hh}:${mm}`);
   }catch(e){
-    alert('Ошибка синхронизации с Jira: '+(e.message||e));
+    setStatus('off','ошибка синхронизации с Jira · '+(e.message||e));
   }finally{
     btn.disabled=false; btn.textContent='⇅ Статус-отчёты из Jira';
   }
