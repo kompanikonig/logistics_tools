@@ -341,6 +341,10 @@ body.dark .pbar span,body.dark .loadpill{color:#0c1410}
 .ef-inp:focus{border-color:var(--accent)}
 input[type="date"].ef-inp{cursor:pointer}
 .ef-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ef-tags{display:flex;gap:8px;flex-wrap:wrap}
+.ef-tag-chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:7px 12px;border:1px solid var(--line2);border-radius:20px;cursor:pointer;transition:.15s;background:var(--panel2);user-select:none}
+.ef-tag-chk:has(input:checked){border-color:var(--accent);background:rgba(122,193,67,.12);color:var(--accent-d);font-weight:600}
+.ef-tag-chk input{display:none}
 .ef-actions{display:flex;gap:10px;margin-top:4px;align-items:center;flex-wrap:wrap}
 .ef-save{padding:9px 22px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
 .ef-save:hover{background:var(--accent-d)}
@@ -410,6 +414,17 @@ input[type="date"].ef-inp{cursor:pointer}
 .status-report td,.status-report th{border:1px solid var(--line2);padding:4px 7px;text-align:left}
 .status-report ol,.status-report ul{margin:0 0 8px;padding-left:20px}
 .status-report img.emoticon{vertical-align:middle}
+#dashKpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.dash-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:.15s}
+.dash-card:hover{border-color:var(--accent)}
+.dash-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.dash-title{font-size:15px;font-weight:700}
+.dash-mgr{font-family:var(--mono);font-size:11.5px;color:var(--txt2);margin-top:3px}
+.dash-noreport{font-size:12.5px;color:var(--txt3);font-style:italic;margin-bottom:10px}
+.dash-report{max-height:140px}
+.dash-bar{position:relative;height:6px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.dash-bar i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+.dash-bardates{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--mono);font-size:10.5px;color:var(--txt3)}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}.barrow{grid-template-columns:130px 1fr 56px}.barrow .nm{font-size:12px}}
 @media(max-width:640px){
@@ -506,6 +521,7 @@ input[type="date"].ef-inp{cursor:pointer}
   <div class="filters">
     <div class="fld"><label>Руководитель</label><div class="msel" id="mselMgr"></div></div>
     <div class="fld"><label>Компетенция</label><div class="msel" id="mselComp"></div></div>
+    <div class="fld"><label>Метка</label><div class="msel" id="mselTags"></div></div>
     <div class="fld"><label>Поиск (проект / исполнитель / CAB)</label><input type="text" id="fSearch" placeholder="введите название или номер CAB…"></div>
     <button class="chipclear" id="clr">Сбросить</button>
   </div>
@@ -561,6 +577,16 @@ input[type="date"].ef-inp{cursor:pointer}
       <div class="legend" id="legendBA"></div>
       <div class="scrollhint">← листайте таблицу по горизонтали →</div>
       <div id="baWrap"></div>
+    </div>
+  </div>
+
+  <!-- DASH: краткий статус для встреч -->
+  <div class="view" id="v-dash">
+    <div class="panel">
+      <h2>Дашборд · статус проектов для встреч</h2>
+      <div class="ph">Название, РП, статус и статус-отчёт из Jira по каждому проекту. Сортировка — по близости дедлайна. Клик по карточке открывает полную детализацию.</div>
+      <div class="kpis" id="dashKpis"></div>
+      <div id="dashList"></div>
     </div>
   </div>
 </div>
@@ -629,7 +655,8 @@ const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','
 const MGR_COLORS = {};
 const palette = ['#6b9bc3','#86a96b','#d4a85a','#cc8072','#9487bb','#5f7e9e','#c08aa6'];
 
-let state = {q:'all', view:'over', mgrs:[], comps:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future'};
+let state = {q:'all', view:'over', mgrs:[], comps:[], tags:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future'};
+const TAGS_LIST = ['Склад','Транспорт','Курьерская доставка'];
 
 // ---- helpers ----
 function loadColor(v){
@@ -660,6 +687,7 @@ const BA = {"people": [{"person": "Троян", "axis": [{"key": "01H1", "lbl": 
 function matchF(r){
   if(state.mgrs.length && !state.mgrs.includes(r.manager)) return false;
   if(state.comps.length && !state.comps.includes(r.competency)) return false;
+  if(state.tags.length && !state.tags.some(t=>(r.tags||[]).includes(t))) return false;
   if(state.search){
     const s=state.search.toLowerCase();
     if(!(r.project.toLowerCase().includes(s)||r.executor.toLowerCase().includes(s)||(r.cab||'').toLowerCase().includes(s))) return false;
@@ -700,7 +728,7 @@ function buildQ(){
     el.appendChild(b);
   });
 }
-const TABS=[['over','Обзор'],['plan','Детализация'],['ba','Загрузка БА']];
+const TABS=[['over','Обзор'],['plan','Детализация'],['ba','Загрузка БА'],['dash','Дашборд']];
 function buildTabs(){
   const el=document.getElementById('tabs');el.innerHTML='';
   TABS.forEach(([k,lbl])=>{
@@ -719,9 +747,10 @@ function buildFilters(){
   state.comps=state.comps.filter(x=>comps.includes(x));
   buildMSel('mselMgr', mgrs, state.mgrs, 'Все руководители');
   buildMSel('mselComp', comps, state.comps, 'Все компетенции');
+  buildMSel('mselTags', TAGS_LIST, state.tags, 'Все метки');
   document.getElementById('fSearch').oninput=e=>{state.search=e.target.value;render();};
   document.getElementById('clr').onclick=()=>{
-    state.mgrs.length=0; state.comps.length=0; state.search='';
+    state.mgrs.length=0; state.comps.length=0; state.tags.length=0; state.search='';
     document.getElementById('fSearch').value=''; buildFilters(); render();
   };
   mgrs.forEach((m,i)=>MGR_COLORS[m]=palette[i%palette.length]);
@@ -1167,6 +1196,64 @@ function renderPlan(rows){
 }
 
 // ---- BA load (half-month matrix) ----
+function renderDash(rows){
+  const pidSet=new Set(rows.map(r=>r._pid).filter(Boolean));
+  const projects=ALL_PROJECTS.filter(p=>pidSet.has(p.id));
+
+  const withInfo=projects.map(p=>{
+    const st=statusOf({start:p.start_date,end:p.end_date,_pstatus:p.status});
+    const hasStart=vd(p.start_date), hasEnd=vd(p.end_date);
+    let pct=null;
+    if(hasStart&&hasEnd){
+      const s=+new Date(p.start_date), e=+new Date(p.end_date), t=+TODAY;
+      pct = e>s ? Math.max(0,Math.min(100,Math.round((t-s)/(e-s)*100))) : 100;
+    }
+    const daysLeft = hasEnd ? Math.round((+new Date(p.end_date)-(+TODAY))/86400000) : null;
+    return {p,st,pct,daysLeft};
+  });
+  withInfo.sort((a,b)=>{
+    const da=a.daysLeft==null?9999:a.daysLeft, db=b.daysLeft==null?9999:b.daysLeft;
+    return da-db;
+  });
+
+  const running=withInfo.filter(x=>x.st.cls==='run').length;
+  const soon=withInfo.filter(x=>x.st.cls==='soon').length;
+  const overdue=withInfo.filter(x=>x.st.label==='Срок прошёл').length;
+  const noReport=withInfo.filter(x=>!x.p.status_report).length;
+
+  document.getElementById('dashKpis').innerHTML=[
+    {v:withInfo.length,l:'Проектов в выборке',cls:''},
+    {v:running,l:'В работе',cls:''},
+    {v:soon,l:'Близко к дедлайну',cls:'warn'},
+    {v:overdue,l:'Просрочено',cls:'bad'},
+    {v:noReport,l:'Без статус-отчёта из Jira',cls:''},
+  ].map(x=>`<div class="kpi ${x.cls}"><div class="v">${x.v}</div><div class="l">${x.l}</div></div>`).join('');
+
+  document.getElementById('dashList').innerHTML = withInfo.map(({p,st,pct,daysLeft})=>{
+    const report = p.status_report
+      ? `<div class="status-report dash-report">${p.status_report}</div>`
+      : `<div class="dash-noreport">Нет статус-отчёта из Jira</div>`;
+    let barColor='var(--c-full)';
+    if(st.cls==='soon') barColor='var(--c-high)';
+    else if(st.label==='Срок прошёл') barColor='var(--c-over)';
+    else if(st.cls==='plan') barColor='var(--c-low)';
+    else if(st.label==='Завершён') barColor='var(--c-zero)';
+    const bar = pct==null ? '' : `
+      <div class="dash-bar"><i style="width:${pct}%;background:${barColor}"></i></div>
+      <div class="dash-bardates"><span>${fmtDate(p.start_date)}</span><span>${fmtDate(p.end_date)}</span></div>`;
+    return `<div class="dash-card" onclick="openDrillByProject('${p.id}')">
+      <div class="dash-head">
+        <div>
+          <div class="dash-title">${p.name}</div>
+          <div class="dash-mgr">РП ${p.manager&&p.manager!=='—'?p.manager:'—'}</div>
+        </div>
+        <span class="statusbadge sb-${st.cls}">${st.label}</span>
+      </div>
+      ${report}
+      ${bar}
+    </div>`;
+  }).join('') || '<div class="empty">Нет проектов под текущий фильтр</div>';
+}
 function renderBA(){
   const ax=BA.axis;
   let h='';
@@ -1262,7 +1349,8 @@ function openDrill(idx){
   const tags = byExec
     ? `<span class="statusbadge sb-${st.cls}">${st.label}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
       +(g.rows[0]?._rid ? `<button class="tag-edit-btn" onclick="openEditResource('${g.rows[0]._rid}')">✏ ред.</button>` : '')
-    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')+cabBadge(cabOf(g.rows))
+    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
+      +(g.rows[0]?.tags||[]).map(t=>`<span class="tagc">${t}</span>`).join('')+cabBadge(cabOf(g.rows))
       +`<button class="tag-edit-btn" onclick="openEditProject('${g.rows[0]?._pid}')">✏ ред.</button>`;
   const card=`
     <button class="mclose" onclick="closeDrill()">✕</button>
@@ -1546,13 +1634,13 @@ let ALL_PROJECTS=[];
 async function loadMeta(){
   const [rRes,pRes]=await Promise.all([
     sb.from('resources').select('id,name,competency').eq('active',true).order('name'),
-    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url,status_report').order('name')
+    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url,status_report,tags').order('name')
   ]);
   if(!rRes.error) ALL_RESOURCES=rRes.data||[];
   if(!pRes.error){
     ALL_PROJECTS=pRes.data||[];
-  } else if(pRes.error?.message?.includes('cab_url')){
-    // колонка ещё не добавлена — откат без cab_url
+  } else if(pRes.error?.message?.includes('cab_url')||pRes.error?.message?.includes('tags')||pRes.error?.message?.includes('status_report')){
+    // какая-то из новых колонок ещё не добавлена — откат к базовому набору
     const fallback=await sb.from('projects').select('id,name,manager,competency,status,start_date,end_date').order('name');
     if(!fallback.error) ALL_PROJECTS=fallback.data||[];
   }
@@ -1608,6 +1696,11 @@ function _projectForm(p){
         <input id="ep-cab" type="url" class="ef-inp" placeholder="https://jira.…/browse/CAB-1234" value="${escAttr(p?.cab_url??'')}" oninput="updateCabPreview(this.value)">
         <div id="ep-cab-preview" style="margin-top:6px;min-height:22px">${p?.cab_url?cabBadge(p.cab_url):'<span style="font-size:11px;color:var(--txt3)">вставьте ссылку — появится кнопка</span>'}</div>
       </div>
+      <div class="ef-row"><label>Метки</label>
+        <div class="ef-tags" id="ep-tags">
+          ${TAGS_LIST.map(t=>`<label class="ef-tag-chk"><input type="checkbox" value="${escAttr(t)}"${(p?.tags||[]).includes(t)?' checked':''}><span>${t}</span></label>`).join('')}
+        </div>
+      </div>
       <div class="ef-actions">
         <button class="ef-save" id="ep-savebtn" onclick="saveProject(${isNew?'null':`'${p.id}'`})">${isNew?'Создать':'Сохранить'}</button>
         <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
@@ -1655,6 +1748,7 @@ async function saveProject(pid){
   if(!name){ alert('Введите название проекта'); return; }
   const btn=document.getElementById('ep-savebtn');
   btn.disabled=true; btn.textContent=pid?'Сохраняю…':'Создаю…';
+  const tags=[...document.querySelectorAll('#ep-tags input:checked')].map(i=>i.value);
   const payload={
     name,
     manager:    '',
@@ -1663,6 +1757,7 @@ async function saveProject(pid){
     start_date: document.getElementById('ep-start').value||null,
     end_date:   document.getElementById('ep-end').value||null,
     cab_url:    document.getElementById('ep-cab').value.trim()||null,
+    tags,
   };
   try{
     if(pid){
@@ -1787,6 +1882,7 @@ function render(){
     document.getElementById('planCompFilter').innerHTML=planCompLegend(); wirePlanCompLegend(); renderPlanning();}
   if(state.view==='plan'){renderPlan(rows);}
   if(isBA){renderBA();}
+  if(state.view==='dash'){renderDash(rows);}
 }
 buildFilters();render();
 
@@ -1814,6 +1910,7 @@ function mapToRows(data){
       manager:    a.projects?.manager ?? '—',
       competency: a.competency        ?? '—',
       cab:        a.projects?.cab_url || a.cab_url || '',
+      tags:       a.projects?.tags ?? [],
       start, end, alloc,
       q1:qv(0), q2:qv(1), q3:qv(2), q4:qv(3),
     };
@@ -1873,7 +1970,7 @@ async function loadLive(){
   try{
     const {data,error}=await sb
       .from('assignments')
-      .select('id,project_id,resource_id,competency,cab_url,start_date,end_date,alloc_percent,projects(id,name,manager,status,cab_url),resources(id,name)');
+      .select('id,project_id,resource_id,competency,cab_url,start_date,end_date,alloc_percent,projects(id,name,manager,status,cab_url,tags),resources(id,name)');
     if(error) throw error;
     const recs=mapToRows(data);
     applyData(recs);
