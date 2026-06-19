@@ -662,6 +662,19 @@ function managersOptions(){
   const fromData=(ALL_PROJECTS||[]).map(p=>p.manager).filter(Boolean);
   return [...new Set([...MANAGERS_LIST,...fromData])].sort((a,b)=>a.localeCompare(b,'ru'));
 }
+function resourcesDatalist(){
+  return `<datalist id="resourcesDatalist">${(ALL_RESOURCES||[]).map(r=>`<option value="${escAttr(r.name)}">`).join('')}</datalist>`;
+}
+async function resolveResourceId(name, competency){
+  name=(name||'').trim();
+  if(!name) return null;
+  const existing=ALL_RESOURCES.find(r=>r.name.toLowerCase()===name.toLowerCase());
+  if(existing) return existing.id;
+  const {data,error}=await sb.from('resources').insert({name,competency:competency||'',active:true}).select('id,name,competency').single();
+  if(error) throw error;
+  ALL_RESOURCES.push(data);
+  return data.id;
+}
 
 // ---- helpers ----
 function loadColor(v){
@@ -1449,9 +1462,7 @@ const COMPETENCIES=['SAP EWM','SAP_LO','SAP_OD','SAP BI','SAP_GIS_EDO','CASH','W
 function openEditAssignment(aid){
   const r=ROWS.find(row=>row._aid===aid);
   if(!r){ alert('Назначение не найдено'); return; }
-  const resOpts=ALL_RESOURCES.map(res=>
-    `<option value="${res.id}"${res.id===r._rid?' selected':''}>${res.name}</option>`
-  ).join('');
+  const curName=ALL_RESOURCES.find(res=>res.id===r._rid)?.name??'';
   const compOpts=COMPETENCIES.map(c=>
     `<option value="${c}"${c===r.competency?' selected':''}>${c}</option>`
   ).join('');
@@ -1462,10 +1473,8 @@ function openEditAssignment(aid){
     <div class="ef">
       <div class="ef-row">
         <label>Исполнитель</label>
-        <select id="ea-rid" class="ef-inp">
-          <option value="">— Без назначения —</option>
-          ${resOpts}
-        </select>
+        <input id="ea-rid" type="text" class="ef-inp" list="resourcesDatalist" placeholder="— Без назначения —" value="${escAttr(curName)}">
+        ${resourcesDatalist()}
       </div>
       <div class="ef-row">
         <label>Компетенция</label>
@@ -1491,7 +1500,7 @@ function openEditAssignment(aid){
 }
 
 async function saveAssignment(aid){
-  const rid=document.getElementById('ea-rid').value||null;
+  const rname=document.getElementById('ea-rid').value;
   const comp=document.getElementById('ea-comp').value;
   const start=document.getElementById('ea-start').value||null;
   const end=document.getElementById('ea-end').value||null;
@@ -1500,6 +1509,7 @@ async function saveAssignment(aid){
   const btn=document.getElementById('ea-savebtn');
   btn.disabled=true; btn.textContent='Сохраняю…';
   try{
+    const rid=await resolveResourceId(rname, comp);
     const {error}=await sb.from('assignments').update({
       resource_id:rid, competency:comp,
       start_date:start, end_date:end, alloc_percent:alloc,
@@ -1558,9 +1568,7 @@ function openAddAssignment(pid, rid=null){
   if(!pid){ alert('Не удалось определить проект'); return; }
   _periodIdx=0;
   const proj=ALL_PROJECTS.find(p=>p.id===pid);
-  const resOpts=ALL_RESOURCES.map(r=>
-    `<option value="${r.id}"${r.id===rid?' selected':''}>${r.name}</option>`
-  ).join('');
+  const curName=ALL_RESOURCES.find(r=>r.id===rid)?.name??'';
   const compOpts=COMPETENCIES.map(c=>
     `<option value="${c}">${c}</option>`
   ).join('');
@@ -1572,10 +1580,8 @@ function openAddAssignment(pid, rid=null){
     <div class="ef">
       <div class="ef-row">
         <label>Исполнитель</label>
-        <select id="aa-rid" class="ef-inp"${rid?'disabled':''}>
-          <option value="">— Без назначения —</option>
-          ${resOpts}
-        </select>
+        <input id="aa-rid" type="text" class="ef-inp" list="resourcesDatalist" placeholder="— Без назначения —" value="${escAttr(curName)}"${rid?' disabled':''}>
+        ${resourcesDatalist()}
       </div>
       <div class="ef-row">
         <label>Компетенция</label>
@@ -1592,7 +1598,7 @@ function openAddAssignment(pid, rid=null){
 }
 
 async function saveAddAssignment(pid){
-  const rid=document.getElementById('aa-rid').value||null;
+  const rname=document.getElementById('aa-rid').value;
   const comp=document.getElementById('aa-comp').value;
   const btn=document.getElementById('aa-savebtn');
   // собираем все периоды из формы
@@ -1607,6 +1613,7 @@ async function saveAddAssignment(pid){
   });
   btn.disabled=true; btn.textContent='Добавляю…';
   try{
+    const rid=await resolveResourceId(rname, comp);
     if(rid) await sb.from('assignments').delete().eq('project_id',pid).is('resource_id',null);
     const inserts=periods.map(p=>({
       project_id:pid, resource_id:rid, competency:comp,
