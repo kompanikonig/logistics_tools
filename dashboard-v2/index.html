@@ -506,7 +506,7 @@ input[type="date"].ef-inp{cursor:pointer}
   <div class="filters">
     <div class="fld"><label>Руководитель</label><div class="msel" id="mselMgr"></div></div>
     <div class="fld"><label>Компетенция</label><div class="msel" id="mselComp"></div></div>
-    <div class="fld"><label>Поиск (проект / исполнитель)</label><input type="text" id="fSearch" placeholder="введите название…"></div>
+    <div class="fld"><label>Поиск (проект / исполнитель / CAB)</label><input type="text" id="fSearch" placeholder="введите название или номер CAB…"></div>
     <button class="chipclear" id="clr">Сбросить</button>
   </div>
 
@@ -662,7 +662,7 @@ function matchF(r){
   if(state.comps.length && !state.comps.includes(r.competency)) return false;
   if(state.search){
     const s=state.search.toLowerCase();
-    if(!(r.project.toLowerCase().includes(s)||r.executor.toLowerCase().includes(s))) return false;
+    if(!(r.project.toLowerCase().includes(s)||r.executor.toLowerCase().includes(s)||(r.cab||'').toLowerCase().includes(s))) return false;
   }
   return true;
 }
