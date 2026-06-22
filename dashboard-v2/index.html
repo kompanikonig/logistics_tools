@@ -1788,6 +1788,7 @@ async function saveProject(pid){
       if(error) throw error;
       closeEditModal();
       await Promise.all([loadLive(),loadMeta()]);
+      refreshDrillIfOpen();
     } else {
       const {data,error}=await sb.from('projects').insert(payload).select('id').single();
       if(error) throw error;
