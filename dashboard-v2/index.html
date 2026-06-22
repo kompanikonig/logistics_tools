@@ -1215,7 +1215,7 @@ function renderPlan(rows){
 // ---- BA load (half-month matrix) ----
 function renderDash(rows){
   const pidSet=new Set(rows.map(r=>r._pid).filter(Boolean));
-  const projects=ALL_PROJECTS.filter(p=>pidSet.has(p.id));
+  const projects=ALL_PROJECTS.filter(p=>pidSet.has(p.id) && p.show_on_dashboard!==false);
 
   const withInfo=projects.map(p=>{
     const st=statusOf({start:p.start_date,end:p.end_date,_pstatus:p.status});
@@ -1645,12 +1645,12 @@ let ALL_PROJECTS=[];
 async function loadMeta(){
   const [rRes,pRes]=await Promise.all([
     sb.from('resources').select('id,name,competency').eq('active',true).order('name'),
-    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url,status_report,tags').order('name')
+    sb.from('projects').select('id,name,manager,competency,status,start_date,end_date,cab_url,status_report,tags,show_on_dashboard').order('name')
   ]);
   if(!rRes.error) ALL_RESOURCES=rRes.data||[];
   if(!pRes.error){
     ALL_PROJECTS=pRes.data||[];
-  } else if(pRes.error?.message?.includes('cab_url')||pRes.error?.message?.includes('tags')||pRes.error?.message?.includes('status_report')){
+  } else if(pRes.error?.message?.includes('cab_url')||pRes.error?.message?.includes('tags')||pRes.error?.message?.includes('status_report')||pRes.error?.message?.includes('show_on_dashboard')){
     // какая-то из новых колонок ещё не добавлена — откат к базовому набору
     const fallback=await sb.from('projects').select('id,name,manager,competency,status,start_date,end_date').order('name');
     if(!fallback.error) ALL_PROJECTS=fallback.data||[];
@@ -1717,6 +1717,12 @@ function _projectForm(p){
           ${TAGS_LIST.map(t=>`<label class="ef-tag-chk"><input type="checkbox" value="${escAttr(t)}"${(p?.tags||[]).includes(t)?' checked':''}><span>${t}</span></label>`).join('')}
         </div>
       </div>
+      <div class="ef-row">
+        <label class="ef-tag-chk" style="width:fit-content">
+          <input type="checkbox" id="ep-show-dash"${(p?.show_on_dashboard??true)?' checked':''}>
+          <span>Отображать на вкладке «Дашборд»</span>
+        </label>
+      </div>
       <div class="ef-actions">
         <button class="ef-save" id="ep-savebtn" onclick="saveProject(${isNew?'null':`'${p.id}'`})">${isNew?'Создать':'Сохранить'}</button>
         <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
@@ -1774,6 +1780,7 @@ async function saveProject(pid){
     end_date:   document.getElementById('ep-end').value||null,
     cab_url:    document.getElementById('ep-cab').value.trim()||null,
     tags,
+    show_on_dashboard: document.getElementById('ep-show-dash').checked,
   };
   try{
     if(pid){
