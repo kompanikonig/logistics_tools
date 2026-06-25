@@ -674,6 +674,23 @@ async function resolveResourceId(name, competency){
   ALL_RESOURCES.push(data);
   return data.id;
 }
+// расчёт срока окончания из трудоёмкости (чел/дн) и загрузки %:
+// календарных дней = трудоёмкость / (загрузка/100); срок включает день старта
+function calcEndFromDuration(startId, allocId, durationId, endId){
+  const start=document.getElementById(startId).value;
+  const allocPct=parseFloat(document.getElementById(allocId).value);
+  const duration=parseFloat(document.getElementById(durationId).value);
+  if(!start||!duration||duration<=0||isNaN(allocPct)||allocPct<=0){
+    alert('Заполните «Начало», «Загрузка %» и «Длительность» — все три нужны для расчёта');
+    return;
+  }
+  const calendarDays=Math.ceil(duration/(allocPct/100));
+  const [y,mo,da]=start.split('-').map(Number);
+  const d=new Date(Date.UTC(y,mo-1,da));
+  d.setUTCDate(d.getUTCDate()+calendarDays-1);
+  const yy=d.getUTCFullYear(), mm=String(d.getUTCMonth()+1).padStart(2,'0'), dd=String(d.getUTCDate()).padStart(2,'0');
+  document.getElementById(endId).value=`${yy}-${mm}-${dd}`;
+}
 
 // ---- helpers ----
 function loadColor(v){
@@ -1492,6 +1509,12 @@ function openEditAssignment(aid){
         <label>Загрузка, %</label>
         <input id="ea-alloc" type="number" class="ef-inp" min="0" max="200" step="5" value="${Math.round(r.alloc*100)}">
       </div>
+      <div class="ef-row"><label>Длительность, чел/дн</label>
+        <div style="display:flex;gap:8px">
+          <input id="ea-duration" type="number" class="ef-inp" min="0" step="0.5" placeholder="напр. 20">
+          <button type="button" class="ef-cancel" style="white-space:nowrap" onclick="calcEndFromDuration('ea-start','ea-alloc','ea-duration','ea-end')">⟳ Рассчитать срок</button>
+        </div>
+      </div>
       <div class="ef-actions">
         <button class="ef-save" id="ea-savebtn" onclick="saveAssignment('${aid}')">Сохранить</button>
         <button class="ef-cancel" onclick="closeEditModal()">Отмена</button>
@@ -1745,6 +1768,12 @@ function _periodRow(idx){
     </div>
     <div class="ef-row"><label>Загрузка, %</label>
       <input id="aa-alloc-${idx}" type="number" class="ef-inp" min="0" max="200" step="5" value="100"></div>
+    <div class="ef-row"><label>Длительность, чел/дн</label>
+      <div style="display:flex;gap:8px">
+        <input id="aa-duration-${idx}" type="number" class="ef-inp" min="0" step="0.5" placeholder="напр. 20">
+        <button type="button" class="ef-cancel" style="white-space:nowrap" onclick="calcEndFromDuration('aa-start-${idx}','aa-alloc-${idx}','aa-duration-${idx}','aa-end-${idx}')">⟳ Рассчитать</button>
+      </div>
+    </div>
   </div>`;
 }
 function addPeriodRow(){
