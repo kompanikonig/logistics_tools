@@ -1176,8 +1176,11 @@ function renderPlan(rows){
       // в режиме «По проектам» — 1 строка на исполнителя, помесячная полоса загрузки на этом проекте
       const byEx={};
       g.rows.forEach(r=>{ (byEx[r.executor]=byEx[r.executor]||[]).push(r); });
-      const exKeys=Object.keys(byEx).sort((a,b)=>
-        byEx[b].reduce((s,r)=>s+planVal(r),0) - byEx[a].reduce((s,r)=>s+planVal(r),0));
+      const exMinStart=k=>{
+        const dates=byEx[k].filter(r=>vd(r.start)).map(r=>+new Date(r.start));
+        return dates.length?Math.min(...dates):Infinity;
+      };
+      const exKeys=Object.keys(byEx).sort((a,b)=>exMinStart(a)-exMinStart(b));
       exKeys.forEach(ex=>{
         const ers=byEx[ex];
         const v=ers.reduce((s,r)=>s+planVal(r),0);
