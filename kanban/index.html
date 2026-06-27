@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Канбан-доска</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f1f3f9; --panel:#ffffff; --panel2:#f6f7fb; --line:#e7e9f1; --line2:#dadce8;
+  --txt:#15172a; --txt2:#5b5f72; --txt3:#9398aa;
+  --accent:#4f46e5; --accent-d:#4338ca; --accent-soft:#eef0ff;
+  --st-new:#6b7280; --st-new-bg:#f1f2f6;
+  --st-progress:#3b82f6; --st-progress-bg:#eaf2ff;
+  --st-blocked:#f59e0b; --st-blocked-bg:#fff6e8;
+  --st-done:#10b981; --st-done-bg:#e9fbf3;
+  --danger:#ef4444;
+  --shadow:0 1px 2px rgba(20,22,40,.04), 0 8px 24px rgba(20,22,40,.07);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+body.dark{
+  --bg:#0f1117; --panel:#181b26; --panel2:#1e212e; --line:#2a2e3d; --line2:#363b4d;
+  --txt:#e7e9f5; --txt2:#a0a4b8; --txt3:#6b6f82;
+  --accent-soft:rgba(79,70,229,.16);
+  --st-new-bg:rgba(107,114,128,.16); --st-progress-bg:rgba(59,130,246,.16);
+  --st-blocked-bg:rgba(245,158,11,.16); --st-done-bg:rgba(16,185,129,.16);
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font);color:var(--txt);background:var(--bg);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;padding:0 0 50px}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--font);cursor:pointer}
+.wrap{max-width:1500px;margin:0 auto;padding:0 24px}
+
+/* ===== login ===== */
+#loginOverlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
+#loginOverlay.hidden{display:none}
+.login-card{background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:36px 38px;width:300px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:16px}
+.login-card h2{margin:0;font-size:19px;font-weight:800}
+.login-card .sub{margin-top:-10px;font-size:13px;color:var(--txt2)}
+.login-card input{width:100%;box-sizing:border-box;padding:10px 13px;border:1.5px solid var(--line2);border-radius:10px;
+  font-size:14.5px;font-family:var(--mono);background:var(--panel2);color:var(--txt);outline:none;transition:border .15s}
+.login-card input:focus{border-color:var(--accent)}
+.login-card .lbtn{padding:10px;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;transition:.15s}
+.login-card .lbtn:hover{background:var(--accent-d)}
+.login-card .lbtn:disabled{opacity:.5}
+.login-err{font-size:12px;color:var(--danger);min-height:14px;text-align:center;margin:0}
+
+/* ===== header ===== */
+header.top{padding:26px 0 18px}
+.toprow{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.lobby-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--txt3);
+  margin-bottom:6px;opacity:.8;transition:opacity .15s}
+.lobby-back:hover{opacity:1;color:var(--accent)}
+h1{font-size:25px;font-weight:800;letter-spacing:-.3px;margin:0;color:var(--txt)}
+.sub{color:var(--txt2);font-size:13px;margin-top:4px}
+.topctrls{display:flex;align-items:center;gap:10px}
+.whobox{display:flex;align-items:center;gap:8px;background:var(--panel);border:1.5px solid var(--line2);
+  border-radius:11px;padding:7px 10px}
+.whobox label{font-family:var(--mono);font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:1px}
+.whobox input{border:none;background:transparent;font-family:var(--font);font-size:13.5px;color:var(--txt);
+  outline:none;width:120px}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line2);background:var(--panel);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;transition:.15s}
+.iconbtn:hover{border-color:var(--accent)}
+
+/* ===== toolbar ===== */
+.toolbar{display:flex;align-items:center;gap:10px;margin:18px 0;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:13.5px;padding:9px 16px;
+  border-radius:10px;border:1.5px solid var(--line2);background:var(--panel);color:var(--txt);transition:.15s}
+.btn:hover{border-color:var(--accent)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-d);border-color:var(--accent-d)}
+.search-inp{flex:1;min-width:180px;max-width:280px;border:1.5px solid var(--line2);border-radius:10px;
+  padding:9px 13px;font-family:var(--font);font-size:13.5px;background:var(--panel);color:var(--txt);outline:none}
+.search-inp:focus{border-color:var(--accent)}
+.dstatus{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--txt2);display:inline-flex;
+  align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
+.dot.live{background:var(--st-done)} .dot.off{background:var(--txt3)} .dot.load{background:var(--st-blocked);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ===== board ===== */
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start}
+.col{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:12px;min-height:120px;
+  transition:background .15s,border-color .15s}
+.col.drag-over{background:var(--accent-soft);border-color:var(--accent)}
+.col-head{display:flex;align-items:center;gap:8px;padding:4px 6px 12px}
+.col-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.col-name{font-weight:700;font-size:13.5px}
+.col-count{margin-left:auto;font-size:11px;color:var(--txt3);background:var(--panel);border:1px solid var(--line2);
+  border-radius:20px;padding:1px 8px}
+.col-body{display:flex;flex-direction:column;gap:9px;min-height:50px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:12px 13px 11px;cursor:grab;
+  transition:box-shadow .18s,transform .18s,border-color .18s}
+.card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.card.dragging{opacity:.35}
+.card .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+.card .ctitle{font-size:14px;font-weight:600;line-height:1.35;margin-bottom:10px;word-break:break-word}
+.card .cfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card .cmeta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0}
+.card .cdue{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--txt3);font-weight:500;white-space:nowrap}
+.card .cdue svg{width:12px;height:12px;flex:none}
+.card .cdue.soon{color:var(--st-blocked)} .card .cdue.over{color:var(--danger)}
+.card .ccomments{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--txt3);white-space:nowrap}
+.card .ccomments svg{width:12px;height:12px}
+.card .cav{width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:9.5px;font-weight:700;flex:none}
+.card .cname{font-size:11px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addcard-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:4px;padding:9px;
+  background:transparent;border:1.5px dashed var(--line2);border-radius:10px;color:var(--txt3);font-size:12.5px;
+  cursor:pointer;transition:.15s}
+.addcard-btn:hover{border-color:var(--accent);color:var(--accent)}
+.empty-col{font-size:12px;color:var(--txt3);text-align:center;padding:14px 0;font-style:italic}
+
+@media(max-width:980px){ .board{grid-template-columns:repeat(2,1fr)} }
+@media(max-width:620px){
+  .board{grid-template-columns:1fr}
+  .toprow{flex-direction:column;align-items:flex-start}
+  .whobox input{width:90px}
+}
+
+/* ===== modal ===== */
+.modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal[hidden]{display:none}
+.modal-bg{position:absolute;inset:0;background:rgba(15,17,30,.5);backdrop-filter:blur(2px)}
+.modal-card{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:18px;
+  box-shadow:var(--shadow);max-width:480px;width:100%;max-height:88vh;overflow:auto;padding:24px}
+.mclose{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);
+  background:var(--panel2);color:var(--txt2);font-size:15px;cursor:pointer;transition:.15s}
+.mclose:hover{color:var(--danger);border-color:var(--danger)}
+.ef{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+.ef-row{display:flex;flex-direction:column;gap:5px}
+.ef-row label{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px}
+.ef-inp{padding:9px 12px;border:1px solid var(--line2);border-radius:9px;font-size:14px;background:var(--panel2);
+  color:var(--txt);outline:none;width:100%;box-sizing:border-box;transition:border-color .15s;font-family:var(--font)}
+.ef-inp:focus{border-color:var(--accent)}
+textarea.ef-inp{resize:vertical;min-height:56px;line-height:1.5}
+.ef-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.status-pills{display:flex;gap:6px;flex-wrap:wrap}
+.status-pill{font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1.5px solid var(--line2);
+  background:var(--panel);color:var(--txt2);cursor:pointer;transition:.15s}
+.status-pill.on{border-color:transparent;color:#fff}
+.ef-actions{display:flex;gap:10px;margin-top:4px;align-items:center;flex-wrap:wrap}
+.ef-save{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:13.5px;
+  font-weight:700;cursor:pointer;transition:.15s}
+.ef-save:hover{background:var(--accent-d)}
+.ef-save:disabled{opacity:.5}
+.ef-cancel{padding:9px 16px;background:transparent;color:var(--txt2);border:1px solid var(--line2);border-radius:9px;
+  font-size:13.5px;cursor:pointer}
+.ef-cancel:hover{border-color:var(--txt2);color:var(--txt)}
+.ef-delete{padding:9px 14px;background:transparent;color:var(--danger);border:1px solid rgba(239,68,68,.35);
+  border-radius:9px;font-size:13.5px;cursor:pointer;margin-left:auto}
+.ef-delete:hover{background:rgba(239,68,68,.08)}
+.comments-list{display:flex;flex-direction:column;gap:9px;max-height:180px;overflow-y:auto;margin-bottom:10px}
+.comment{background:var(--panel2);border-radius:9px;padding:9px 11px}
+.comment .cauthor{font-size:11.5px;font-weight:700;margin-bottom:2px}
+.comment .ctime{font-size:10px;color:var(--txt3);font-weight:400;margin-left:6px}
+.comment .ctext{font-size:13px;color:var(--txt2);line-height:1.45;word-break:break-word}
+.comment-empty{font-size:12px;color:var(--txt3);font-style:italic;margin-bottom:10px}
+.comment-add{display:flex;gap:8px}
+.comment-add input{flex:1}
+.comment-add button{border:none;background:var(--accent);color:#fff;border-radius:9px;width:38px;flex:none;
+  display:flex;align-items:center;justify-content:center}
+.comment-add button:hover{background:var(--accent-d)}
+.comment-add button svg{width:15px;height:15px}
+</style>
+</head>
+<body>
+
+<div id="loginOverlay">
+  <div class="login-card">
+    <h2>Канбан-доска</h2>
+    <p class="sub">Введите пароль для входа</p>
+    <input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password">
+    <button class="lbtn" id="loginBtn">Войти</button>
+    <p class="login-err" id="loginErr"></p>
+  </div>
+</div>
+
+<div id="appWrap" style="display:none">
+  <div class="wrap">
+    <header class="top">
+      <div class="toprow">
+        <div>
+          <a href="../" class="lobby-back">← Лобби</a>
+          <h1>Канбан-доска</h1>
+          <div class="sub">Задачи команды: статусы, сроки, комментарии</div>
+        </div>
+        <div class="topctrls">
+          <div class="whobox"><label>Я</label><input id="meInput" type="text" list="meDatalist" placeholder="Имя"></div>
+          <button class="iconbtn" id="themeBtn" title="Тема">🌙</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button class="btn btn-primary" id="newCardBtn">＋ Новая задача</button>
+      <input type="text" class="search-inp" id="searchInp" placeholder="Поиск по задачам…">
+      <span class="dstatus" id="dataStatus"></span>
+    </div>
+
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+<datalist id="meDatalist"></datalist>
+<datalist id="assigneeDatalist"></datalist>
+
+<div class="modal" id="cardModal" hidden>
+  <div class="modal-bg" id="cardModalBg"></div>
+  <div class="modal-card" id="cardModalBody"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://esszpbcsdvdgtqauuqku.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PASS_HASH = 'e8702ecd939e3ace89e85e0df11878c76de38bc8c4ed42f1d842abb05e9b511a';
+const AUTH_KEY = 'kanban_auth';
+const POLL_MS = 25000;
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function showApp(){ document.getElementById('loginOverlay').classList.add('hidden'); document.getElementById('appWrap').style.display=''; init(); }
+function showLogin(){ document.getElementById('loginOverlay').classList.remove('hidden'); document.getElementById('appWrap').style.display='none'; }
+async function doLogin(){
+  const pwd=document.getElementById('loginPwd').value;
+  const btn=document.getElementById('loginBtn'), err=document.getElementById('loginErr');
+  if(!pwd){ err.textContent='Введите пароль'; return; }
+  btn.disabled=true; btn.textContent='Проверка…'; err.textContent='';
+  try{
+    if(!window.isSecureContext || !crypto.subtle) throw new Error('insecure-context');
+    const hash=await sha256(pwd);
+    if(hash===PASS_HASH){ localStorage.setItem(AUTH_KEY,hash); showApp(); return; }
+    err.textContent='Неверный пароль';
+  }catch(e){
+    err.textContent = e.message==='insecure-context' ? 'Откройте страницу по https:// или через сервер' : 'Ошибка: '+(e.message||e);
+  }finally{
+    btn.disabled=false; btn.textContent='Войти';
+  }
+}
+document.getElementById('loginBtn').onclick=doLogin;
+document.getElementById('loginPwd').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+const STATUSES=[
+  {key:'new',label:'Новая',color:'var(--st-new)',bg:'var(--st-new-bg)'},
+  {key:'progress',label:'В работе',color:'var(--st-progress)',bg:'var(--st-progress-bg)'},
+  {key:'blocked',label:'Трудности',color:'var(--st-blocked)',bg:'var(--st-blocked-bg)'},
+  {key:'done',label:'Выполнено',color:'var(--st-done)',bg:'var(--st-done-bg)'},
+];
+const TAG_PALETTE=['#8b5cf6','#3b82f6','#f59e0b','#ec4899','#10b981','#ef4444','#06b6d4'];
+function tagColor(tag){
+  if(!tag) return {bg:'var(--panel2)',c:'var(--txt3)'};
+  let h=0; for(let i=0;i<tag.length;i++) h=(h*31+tag.charCodeAt(i))>>>0;
+  const c=TAG_PALETTE[h%TAG_PALETTE.length];
+  return {bg:c+'1a', c};
+}
+function avColor(name){
+  if(!name) return '#9398aa';
+  let h=0; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0;
+  return TAG_PALETTE[h%TAG_PALETTE.length];
+}
+function initials(name){ const p=(name||'').trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s){ return esc(s); }
+
+let CARDS=[];      // {id,title,status,tag,assignee,due_date,sort_order,comments:[...]}
+let dragId=null, dragFromStatus=null;
+let state={search:''};
+
+function setStatus(cls,txt){ document.getElementById('dataStatus').innerHTML='<span class="dot '+cls+'"></span>'+txt; }
+
+async function loadAll(){
+  setStatus('load','загрузка…');
+  try{
+    const [cardsRes, commentsRes] = await Promise.all([
+      sb.from('kanban_cards').select('*').order('sort_order'),
+      sb.from('kanban_comments').select('*').order('created_at'),
+    ]);
+    if(cardsRes.error) throw cardsRes.error;
+    if(commentsRes.error) throw commentsRes.error;
+    const byCard={};
+    (commentsRes.data||[]).forEach(c=>{ (byCard[c.card_id]=byCard[c.card_id]||[]).push(c); });
+    CARDS=(cardsRes.data||[]).map(c=>({...c, comments:byCard[c.id]||[]}));
+    const t=new Date(), hh=('0'+t.getHours()).slice(-2), mm=('0'+t.getMinutes()).slice(-2);
+    setStatus('live','синхронизировано · '+hh+':'+mm);
+    refreshDatalists();
+    renderBoard();
+  }catch(e){
+    setStatus('off','ошибка загрузки · '+(e.message||e));
+  }
+}
+function refreshDatalists(){
+  const names=[...new Set(CARDS.map(c=>c.assignee).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ru'));
+  document.getElementById('assigneeDatalist').innerHTML=names.map(n=>`<option value="${escAttr(n)}">`).join('');
+  const authors=[...new Set(CARDS.flatMap(c=>c.comments.map(cm=>cm.author)).filter(Boolean))];
+  if(me && !authors.includes(me)) authors.push(me);
+  document.getElementById('meDatalist').innerHTML=authors.map(n=>`<option value="${escAttr(n)}">`).join('');
+}
+
+function fmtDue(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-');
+  const months=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+  return `${+d} ${months[+m-1]}`;
+}
+function dueState(iso){
+  if(!iso) return '';
+  const days=Math.round((new Date(iso+'T00:00:00')-new Date(new Date().toDateString()))/86400000);
+  if(days<0) return 'over';
+  if(days<=2) return 'soon';
+  return '';
+}
+function filtered(){
+  const s=state.search.trim().toLowerCase();
+  if(!s) return CARDS;
+  return CARDS.filter(c=>(c.title||'').toLowerCase().includes(s) || (c.assignee||'').toLowerCase().includes(s) || (c.tag||'').toLowerCase().includes(s));
+}
+
+function renderBoard(){
+  const rows=filtered();
+  const el=document.getElementById('board');
+  el.innerHTML=STATUSES.map(st=>{
+    const cards=rows.filter(c=>c.status===st.key).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+    return `<div class="col" data-col="${st.key}">
+      <div class="col-head"><span class="col-dot" style="background:${st.color}"></span>
+        <span class="col-name">${st.label}</span><span class="col-count">${cards.length}</span></div>
+      <div class="col-body" data-body="${st.key}">
+        ${cards.length?cards.map(c=>cardHTML(c)).join(''):'<div class="empty-col">Пусто</div>'}
+      </div>
+      <button class="addcard-btn" data-addto="${st.key}">＋ Добавить задачу</button>
+    </div>`;
+  }).join('');
+  wireBoard();
+}
+function cardHTML(c){
+  const tc=tagColor(c.tag);
+  const ds=dueState(c.due_date);
+  const due=c.due_date?`<span class="cdue ${ds}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>${fmtDue(c.due_date)}</span>`:'';
+  const comments=c.comments.length?`<span class="ccomments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>${c.comments.length}</span>`:'';
+  const av=c.assignee?`<span class="cav" style="background:${avColor(c.assignee)}">${esc(initials(c.assignee))}</span><span class="cname" title="${escAttr(c.assignee)}">${esc(c.assignee)}</span>`:'';
+  const tag=c.tag?`<span class="tag" style="background:${tc.bg};color:${tc.c}">${esc(c.tag)}</span>`:'';
+  return `<div class="card" draggable="true" data-id="${c.id}">
+    ${tag}
+    <div class="ctitle">${esc(c.title)}</div>
+    <div class="cfoot">
+      <div class="cmeta">${av}${due}${comments}</div>
+    </div>
+  </div>`;
+}
+function wireBoard(){
+  document.querySelectorAll('.card').forEach(card=>{
+    card.addEventListener('dragstart',e=>{
+      dragId=card.dataset.id; dragFromStatus=CARDS.find(c=>c.id===dragId)?.status;
+      card.classList.add('dragging'); e.dataTransfer.setData('text/plain',dragId); e.dataTransfer.effectAllowed='move';
+    });
+    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+    card.addEventListener('click',()=>openCardModal(card.dataset.id));
+    card.addEventListener('dragover',e=>{ e.preventDefault(); e.stopPropagation(); });
+    card.addEventListener('drop',e=>{
+      e.preventDefault(); e.stopPropagation();
+      dropCard(card.closest('.col').dataset.col, card.dataset.id);
+    });
+  });
+  document.querySelectorAll('.col').forEach(col=>{
+    col.addEventListener('dragover',e=>{ e.preventDefault(); col.classList.add('drag-over'); });
+    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault(); col.classList.remove('drag-over');
+      dropCard(col.dataset.col, null);
+    });
+  });
+  document.querySelectorAll('[data-addto]').forEach(btn=>{
+    btn.addEventListener('click',()=>openCardModal(null, btn.dataset.addto));
+  });
+}
+async function dropCard(toStatus, beforeCardId){
+  document.querySelectorAll('.col.drag-over').forEach(c=>c.classList.remove('drag-over'));
+  if(!dragId) return;
+  const card=CARDS.find(c=>c.id===dragId);
+  if(!card) return;
+  const others=CARDS.filter(c=>c.status===toStatus && c.id!==dragId).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  let insertAt=others.length;
+  if(beforeCardId){ const idx=others.findIndex(c=>c.id===beforeCardId); if(idx>=0) insertAt=idx; }
+  others.splice(insertAt,0,card);
+  card.status=toStatus;
+  others.forEach((c,i)=>c.sort_order=i);
+  renderBoard();
+  try{
+    await Promise.all(others.map(c=>sb.from('kanban_cards').update({status:c.status,sort_order:c.sort_order,updated_at:new Date().toISOString()}).eq('id',c.id)));
+  }catch(e){ setStatus('off','ошибка сохранения порядка'); }
+  dragId=null; dragFromStatus=null;
+}
+
+// ===== card modal (create/edit) =====
+let activeCardId=null, activeNewStatus=null;
+function openCardModal(id, newStatus){
+  activeCardId=id; activeNewStatus=newStatus||'new';
+  const card=id?CARDS.find(c=>c.id===id):null;
+  const isNew=!card;
+  const body=document.getElementById('cardModalBody');
+  body.innerHTML=`
+    <button class="mclose" id="cmClose">✕</button>
+    <div style="font-weight:800;font-size:18px;margin-bottom:4px">${isNew?'Новая задача':'Задача'}</div>
+    <div class="ef">
+      <div class="ef-row"><label>Название</label>
+        <input id="cm-title" type="text" class="ef-inp" placeholder="Что нужно сделать?" value="${card?escAttr(card.title):''}"></div>
+      <div class="ef-row"><label>Статус</label>
+        <div class="status-pills" id="cm-status-pills">
+          ${STATUSES.map(st=>`<button type="button" class="status-pill" data-st="${st.key}">${st.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="ef-2col">
+        <div class="ef-row"><label>Тег</label>
+          <input id="cm-tag" type="text" class="ef-inp" placeholder="напр. Дизайн" value="${card?escAttr(card.tag||''):''}"></div>
+        <div class="ef-row"><label>Срок</label>
+          <input id="cm-due" type="date" class="ef-inp" value="${card?escAttr(card.due_date||''):''}" onclick="this.showPicker&&this.showPicker()"></div>
+      </div>
+      <div class="ef-row"><label>Исполнитель</label>
+        <input id="cm-assignee" type="text" class="ef-inp" list="assigneeDatalist" placeholder="Имя исполнителя" value="${card?escAttr(card.assignee||''):''}"></div>
+      ${!isNew?`
+        <div class="ef-row"><label>Комментарии</label>
+          <div class="comments-list" id="cm-comments"></div>
+          <div class="comment-add">
+            <input id="cm-comment-input" type="text" class="ef-inp" placeholder="Написать комментарий…">
+            <button type="button" id="cm-comment-send" aria-label="Отправить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+          </div>
+        </div>`:''}
+      <div class="ef-actions">
+        <button class="ef-save" id="cm-save">${isNew?'Создать':'Сохранить'}</button>
+        <button class="ef-cancel" id="cm-cancel">Отмена</button>
+        ${!isNew?'<button class="ef-delete" id="cm-delete">🗑 Удалить</button>':''}
+      </div>
+    </div>`;
+  const curStatus=card?card.status:activeNewStatus;
+  body.querySelectorAll('.status-pill').forEach(p=>{
+    const st=STATUSES.find(s=>s.key===p.dataset.st);
+    const on=p.dataset.st===curStatus;
+    p.classList.toggle('on',on);
+    if(on){ p.style.background=st.color; }
+    p.onclick=()=>{
+      body.querySelectorAll('.status-pill').forEach(x=>{x.classList.remove('on');x.style.background='';});
+      p.classList.add('on'); p.style.background=st.color;
+    };
+  });
+  if(!isNew) renderCardComments(card);
+  document.getElementById('cardModal').hidden=false;
+  document.getElementById('cmClose').onclick=closeCardModal;
+  document.getElementById('cm-cancel').onclick=closeCardModal;
+  document.getElementById('cm-save').onclick=()=>saveCard(isNew);
+  if(!isNew){
+    document.getElementById('cm-delete').onclick=()=>deleteCard(card.id);
+    document.getElementById('cm-comment-send').onclick=()=>addComment(card.id);
+    document.getElementById('cm-comment-input').addEventListener('keydown',e=>{ if(e.key==='Enter') addComment(card.id); });
+  }
+}
+function closeCardModal(){ document.getElementById('cardModal').hidden=true; activeCardId=null; }
+function renderCardComments(card){
+  const el=document.getElementById('cm-comments');
+  el.innerHTML=card.comments.length
+    ? card.comments.map(c=>`<div class="comment"><div class="cauthor">${esc(c.author)}<span class="ctime">${fmtTime(c.created_at)}</span></div><div class="ctext">${esc(c.text)}</div></div>`).join('')
+    : '<div class="comment-empty">Пока нет комментариев</div>';
+}
+function fmtTime(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  return d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+async function saveCard(isNew){
+  const title=document.getElementById('cm-title').value.trim();
+  if(!title){ alert('Введите название задачи'); return; }
+  const status=document.querySelector('.status-pill.on')?.dataset.st || 'new';
+  const tag=document.getElementById('cm-tag').value.trim();
+  const due=document.getElementById('cm-due').value||null;
+  const assignee=document.getElementById('cm-assignee').value.trim();
+  const btn=document.getElementById('cm-save');
+  btn.disabled=true; btn.textContent=isNew?'Создаю…':'Сохраняю…';
+  try{
+    if(isNew){
+      const sameCol=CARDS.filter(c=>c.status===status);
+      const sort_order=sameCol.length?Math.max(...sameCol.map(c=>c.sort_order||0))+1:0;
+      const {error}=await sb.from('kanban_cards').insert({title,status,tag,assignee,due_date:due,sort_order});
+      if(error) throw error;
+    } else {
+      const {error}=await sb.from('kanban_cards').update({title,status,tag,assignee,due_date:due,updated_at:new Date().toISOString()}).eq('id',activeCardId);
+      if(error) throw error;
+    }
+    closeCardModal();
+    await loadAll();
+  }catch(e){
+    btn.disabled=false; btn.textContent=isNew?'Создать':'Сохранить';
+    alert('Ошибка сохранения: '+(e.message||e));
+  }
+}
+async function deleteCard(id){
+  if(!confirm('Удалить эту задачу?')) return;
+  try{
+    await sb.from('kanban_cards').delete().eq('id',id);
+    closeCardModal();
+    await loadAll();
+  }catch(e){ alert('Ошибка удаления: '+(e.message||e)); }
+}
+async function addComment(cardId){
+  const inp=document.getElementById('cm-comment-input');
+  const text=inp.value.trim();
+  if(!text) return;
+  const author=me||'Гость';
+  try{
+    const {error}=await sb.from('kanban_comments').insert({card_id:cardId, author, text});
+    if(error) throw error;
+    inp.value='';
+    await loadAll();
+    const card=CARDS.find(c=>c.id===cardId);
+    if(card) renderCardComments(card);
+  }catch(e){ alert('Ошибка отправки комментария: '+(e.message||e)); }
+}
+
+// ===== "кто я" + тема + поиск + поллинг =====
+let me=localStorage.getItem('kanban_me')||'';
+function applyTheme(){
+  const dark=localStorage.getItem('kanban_theme')==='dark';
+  document.body.classList.toggle('dark',dark);
+  document.getElementById('themeBtn').textContent=dark?'☀️':'🌙';
+}
+function scheduleNextPoll(){
+  const jitter=Math.random()*10000-5000;
+  setTimeout(async()=>{ await loadAll(); scheduleNextPoll(); }, POLL_MS+jitter);
+}
+function init(){
+  document.getElementById('meInput').value=me;
+  document.getElementById('meInput').addEventListener('change',e=>{ me=e.target.value.trim(); localStorage.setItem('kanban_me',me); });
+  document.getElementById('newCardBtn').onclick=()=>openCardModal(null,'new');
+  document.getElementById('searchInp').addEventListener('input',e=>{ state.search=e.target.value; renderBoard(); });
+  document.getElementById('cardModalBg').onclick=closeCardModal;
+  document.getElementById('themeBtn').onclick=()=>{
+    const dark=!document.body.classList.contains('dark');
+    localStorage.setItem('kanban_theme',dark?'dark':'light');
+    applyTheme();
+  };
+  applyTheme();
+  loadAll();
+  scheduleNextPoll();
+}
+
+if(localStorage.getItem(AUTH_KEY)===PASS_HASH) showApp(); else showLogin();
+</script>
+</body>
+</html>
