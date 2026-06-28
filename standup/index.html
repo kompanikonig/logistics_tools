@@ -216,6 +216,7 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="../shared.js"></script>
 </head>
 <body>
 <div id="loginOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;">
@@ -325,8 +326,6 @@ function isWorkday(iso){
   return dow!==0 && dow!==6;
 }
 function uid(){ return Math.random().toString(36).slice(2,9); }
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function initials(name){ const p=name.split(' '); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
 
 function blankDay(){ const o={people:{}}; PEOPLE.forEach(n=>o.people[n]={status:'work',note:'',tasks:[]}); return o; }

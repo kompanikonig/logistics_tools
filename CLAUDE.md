@@ -21,6 +21,7 @@ CSS/JS inline and zero external JS dependencies (only Google Fonts are pulled in
 - `kanban/index.html` — Supabase-backed kanban board for team tasks (Новая/В работе/Трудности/
   Выполнено), drag-and-drop, due dates, comments. Password-gated like `dashboard-v2` (SHA-256),
   with two role passwords (admin: full CRUD, viewer: read-only) — see its architecture notes below.
+- `shared.js` — small set of dependency-free helpers shared by the tools above (see below).
 
 ## Working locally
 
@@ -37,11 +38,23 @@ then visit `http://localhost:8000/`.
 Deployment is just pushing to `main` — GitHub Pages serves the repo root directly (no Actions
 workflow, no `gh-pages` branch).
 
+## `shared.js`
+
+A top-level `shared.js`, included via `<script src="../shared.js">` in each tool (after the
+Supabase/SheetJS CDN tags, before the tool's own inline `<script>`). Holds dependency-free pure
+helpers duplicated across tools: `sha256()` (used by `dashboard-v2` and `kanban`'s SHA-256
+password gate), `esc()`/`escAttr()` (HTML escaping), `initials()`. Deliberately does **not**
+hold CSS variables or theme-toggle logic — each tool's `:root` color palette and theme mechanism
+are intentionally different (different brand colors, different persistence keys), not
+duplication to remove.
+
 ## `standup/index.html` architecture
 
 - The team roster is hardcoded in `PEOPLE`, plus a special pseudo-user `MANAGER` ("Руководитель")
-  that switches the UI into a read-only team-summary view instead of an editable card. There is
-  no authentication — "who am I" is just a `<select>` persisted to `localStorage` (`standup_me`).
+  that switches the UI into a read-only team-summary view instead of an editable card. "Who am I"
+  is a `<select>` persisted to `localStorage` (`standup_me`); page access itself is gated by a
+  real Supabase Auth login (`sb.auth.signInWithPassword`), unlike `dashboard-v2`/`kanban`'s
+  static SHA-256 password scheme.
 - Storage is abstracted behind `apiGetAll()`/`apiSave()` via `backend()`: if `CONFIG.url` is set,
   both read/write go through a Google Apps Script Web App (acting as a proxy/DB on top of a
   Google Sheet); if empty, it falls back to per-browser `localStorage` only (single device, not
@@ -115,10 +128,10 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
 2. **Зафиксировать RLS-политики в git**, а не только в Supabase Studio — отдельный `.sql` файл
    в репозитории, который можно переналожить одной командой (страховка от инцидентов вроде
    сегодняшнего, когда RLS включился без политик и обе панели легли с пустыми данными)
-3. **Вынести повторяющийся код** (тема/dark-mode, sha256-хелпер, CSS-переменные, верстка
-   login-оверлея) из `dashboard-v2/index.html` и `standup/index.html` в общий
-   `shared.js`/`shared.css`, подключаемый через `<script src>`/`<link>` — без сборки, без npm,
-   просто общий файл вместо копипасты
+3. ✅ **Вынести повторяющийся код** — `sha256()`, `esc()`/`escAttr()`, `initials()` вынесены в
+   общий `shared.js` (см. раздел выше), подключаемый через `<script src>` в `dashboard-v2`,
+   `standup`, `kanban`. CSS-переменные и тема/dark-mode оставлены как есть — у каждого
+   инструмента свой фирменный цвет и механизм переключения, это не дубликат, а разный дизайн
 
 **Правила на время переработки:**
 - Каждое изменение коммитить в Git — это страховка для отката.

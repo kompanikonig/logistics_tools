@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="../shared.js"></script>
 <style>
 :root{
   --bg:#eef2f7; --bg2:#e9eef6; --panel:#ffffff; --panel2:#f4f7fb;
@@ -601,10 +602,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PASS_HASH = 'e8702ecd939e3ace89e85e0df11878c76de38bc8c4ed42f1d842abb05e9b511a';
 const AUTH_KEY  = 'dv2_auth';
 
-async function sha256(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 function showDashboard(){
   document.getElementById('loginOverlay').classList.add('hidden');
   loadMeta();
@@ -1704,9 +1701,6 @@ async function sbWriteAndRefresh(fn){
     alert('Ошибка сохранения: '+(e.message||e));
   }
 }
-
-// ── esc helper ────────────────────────────────────────────────────────────────
-function escAttr(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
 
 // ── CRUD: проекты ─────────────────────────────────────────────────────────────
 function _projectForm(p){

@@ -226,6 +226,7 @@ textarea.ef-inp{resize:vertical;min-height:56px;line-height:1.5}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../shared.js"></script>
 <script>
 const SUPABASE_URL = 'https://esszpbcsdvdgtqauuqku.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
@@ -240,10 +241,6 @@ const POLL_MS = 25000;
 let myRole = localStorage.getItem(ROLE_KEY) || 'admin';
 function isAdmin(){ return myRole==='admin'; }
 
-async function sha256(str){
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 function showApp(){ document.getElementById('loginOverlay').classList.add('hidden'); document.getElementById('appWrap').style.display=''; init(); }
 function showLogin(){ document.getElementById('loginOverlay').classList.remove('hidden'); document.getElementById('appWrap').style.display='none'; }
 async function doLogin(){
@@ -284,10 +281,6 @@ function avColor(name){
   let h=0; for(let i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))>>>0;
   return TAG_PALETTE[h%TAG_PALETTE.length];
 }
-function initials(name){ const p=(name||'').trim().split(/\s+/); return ((p[0]||'')[0]||'')+((p[1]||'')[0]||''); }
-function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function escAttr(s){ return esc(s); }
-
 let CARDS=[];      // {id,title,status,tag,assignee,due_date,sort_order,comments:[...]}
 let dragId=null, dragFromStatus=null;
 let state={search:''};
