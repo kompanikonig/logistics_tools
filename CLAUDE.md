@@ -133,13 +133,20 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
    - Логин dashboard-v2 переведён с общего SHA-256-пароля на персональные email+пароль
      (Supabase Auth, как в `standup`); смена пароля — через «Забыли пароль?» (recovery-ссылка на
      почту, без участия админа)
-   - **Anon-доступ к `projects`/`assignments`/`resources` пока не убран** (см.
-     `supabase/policies.sql`) — это осознанный временный fallback на случай проблем с переходом;
-     убрать как отдельный, явно подтверждённый шаг после того, как все 6 человек подтвердят
-     успешный вход под своим аккаунтом
-2. ✅ **Зафиксировать RLS-политики в git** — `supabase/policies.sql`, снимок всех текущих политик
-   (anon/authenticated, полностью открытые) по всем 7 таблицам; переналожить одной командой:
-   `npx supabase db query --linked -f supabase/policies.sql`
+   - ✅ **Anon-доступ к `projects`/`assignments`/`resources` закрыт** (2026-06-28) — проверено:
+     анонимный ключ получает пустой результат на чтение и `42501` на запись; авторизованные
+     admin/pm/lead продолжают работать как раньше. Заодно закрыт anon-доступ и у `standup`
+     (`standup_days`/`standup_tasks`) — там он не был частью этой задачи изначально, но политика
+     была такой же открытой; у `standup` остаётся общий `authenticated`-доступ без ролей
+     (`auth_full_days`/`auth_full_tasks`), это не менялось
+   - ⬜ **`kanban` всё ещё полностью открыт anon-ключом** (`kanban_cards`/`kanban_comments`) —
+     там нет Supabase Auth вообще, только SHA-256-пароль на уровне UI, который не защищает от
+     прямого запроса к API. Закрыть тем же способом, что и dashboard-v2 (Auth + роли) — отдельная
+     задача, отложена сознательно, чтобы не сломать инструмент без замены механизма входа
+2. ✅ **Зафиксировать RLS-политики в git** — `supabase/policies.sql`, актуальный снимок политик по
+   всем 9 таблицам (включая `profiles`/`activity_log`); переналожить одной командой:
+   `npx supabase db query --linked -f supabase/policies.sql` (требует, чтобы перед этим хоть раз
+   был применён `supabase/migration_roles.sql` — оттуда берётся функция `current_role()`)
 3. ✅ **Вынести повторяющийся код** — `sha256()`, `esc()`/`escAttr()`, `initials()` вынесены в
    общий `shared.js` (см. раздел выше), подключаемый через `<script src>` в `dashboard-v2`,
    `standup`, `kanban`. CSS-переменные и тема/dark-mode оставлены как есть — у каждого
