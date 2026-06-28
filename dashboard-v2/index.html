@@ -622,6 +622,10 @@ input[type="date"].ef-inp{cursor:pointer}
 const SUPABASE_URL = 'https://esszpbcsdvdgtqauuqku.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// supabase-js парсит и сразу зачищает #access_token=...&type=recovery из URL при инициации
+// клиента — ловим признак recovery-ссылки синхронно здесь, до того как это произойдёт, иначе
+// ниже getSession() увидит уже залогиненную recovery-сессию и проскочит мимо формы смены пароля.
+const _isRecoveryLink = location.hash.includes('type=recovery');
 
 // ── роли ──────────────────────────────────────────────────────────────────────
 let myProfile = null; // {role, full_name} из public.profiles
@@ -733,6 +737,12 @@ sb.auth.onAuthStateChange((event) => {
 
 // ── проверяем сессию при загрузке ─────────────────────────────────────────────
 (async () => {
+  if(_isRecoveryLink){
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('loginCardForm').style.display='none';
+    document.getElementById('recoveryCardForm').style.display='';
+    return;
+  }
   const { data: { session } } = await sb.auth.getSession();
   if(session){ await afterLogin(); } else { showLogin(); }
 })();
