@@ -480,19 +480,40 @@ input[type="date"].ef-inp{cursor:pointer}
 .login-card button.login-btn{padding:11px;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:opacity .15s}
 .login-card button.login-btn:disabled{opacity:.5;cursor:default}
 .login-err{font-size:12px;color:#e05c5c;min-height:16px;text-align:center}
+.login-msg{font-size:12px;color:var(--accent-d);min-height:16px;text-align:center}
+.login-card input[type=email]{width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid var(--line2);border-radius:10px;font-size:15px;font-family:var(--mono);background:var(--bg2);color:var(--txt1);outline:none;transition:border .15s}
+.login-card input[type=email]:focus{border-color:var(--accent)}
+.login-link{font-size:12px;color:var(--txt2);text-align:center;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0}
+.role-badge-dv2{font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;background:var(--accent);color:#fff;align-self:flex-start;margin-right:8px}
 </style>
 </head>
 <body>
 <div id="loginOverlay">
-  <div class="login-card">
+  <div class="login-card" id="loginCardForm">
     <h2>Панель планирования</h2>
-    <p class="sub">Логистика 2026 · Введите пароль для входа</p>
+    <p class="sub">Логистика 2026 · Войдите со своим аккаунтом</p>
+    <div>
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" placeholder="name@detmir.ru" autocomplete="username">
+    </div>
     <div>
       <label for="loginPwd">Пароль</label>
       <input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button class="login-btn" id="loginBtn">Войти</button>
+    <button type="button" class="login-link" id="forgotBtn">Забыли пароль?</button>
     <div class="login-err" id="loginErr"></div>
+    <div class="login-msg" id="loginMsg"></div>
+  </div>
+  <div class="login-card" id="recoveryCardForm" style="display:none">
+    <h2>Новый пароль</h2>
+    <p class="sub">Придумайте пароль для входа</p>
+    <div>
+      <label for="recoveryPwd">Новый пароль</label>
+      <input type="password" id="recoveryPwd" placeholder="не менее 6 символов" autocomplete="new-password">
+    </div>
+    <button class="login-btn" id="recoverySaveBtn">Сохранить пароль</button>
+    <div class="login-err" id="recoveryErr"></div>
   </div>
 </div>
 <header><div class="wrap">
@@ -502,7 +523,9 @@ input[type="date"].ef-inp{cursor:pointer}
       <h1>Панель загрузки и сроков</h1>
       <div class="sub">Анализ загрузки исполнителей · контроль сроков · планирование ресурсов</div>
     </div>
-    <div style="display:flex;gap:8px;align-self:flex-start">
+    <div style="display:flex;gap:8px;align-self:flex-start;align-items:center">
+      <span class="role-badge-dv2" id="roleBadgeDv2" style="display:none"></span>
+      <button onclick="logoutDv2()" class="themebtn" title="Выйти">⇥</button>
       <button onclick="exportExcel()" class="themebtn" title="Выгрузить все данные в Excel">📥</button>
       <button id="themeBtn" class="themebtn" title="Сменить тему">🌙</button>
     </div>
@@ -599,49 +622,120 @@ input[type="date"].ef-inp{cursor:pointer}
 const SUPABASE_URL = 'https://esszpbcsdvdgtqauuqku.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const PASS_HASH = 'e8702ecd939e3ace89e85e0df11878c76de38bc8c4ed42f1d842abb05e9b511a';
-const AUTH_KEY  = 'dv2_auth';
+
+// ── роли ──────────────────────────────────────────────────────────────────────
+let myProfile = null; // {role, full_name} из public.profiles
+function isAdmin(){ return myProfile?.role === 'admin'; }
+function isPM(){ return myProfile?.role === 'pm'; }
+function isLead(){ return myProfile?.role === 'lead'; }
+function canEditAssignments(){ return isAdmin() || isPM(); }
+function canManageProjects(){ return isAdmin(); }
+function canEditResources(){ return isAdmin(); }
+function canCreateResources(){ return isAdmin() || isPM(); }
+function denyAccess(){ alert('Недостаточно прав для этого действия (роль: '+(myProfile?.role||'?')+').'); }
+function applyRoleUI(){
+  const badge=document.getElementById('roleBadgeDv2');
+  badge.style.display='';
+  badge.textContent = {admin:'Админ', pm:'РП', lead:'Просмотр'}[myProfile?.role] || myProfile?.role || '?';
+  document.querySelector('button[onclick="openCreateProject()"]')?.style.setProperty('display', canManageProjects()?'':'none');
+  document.querySelector('button[onclick="openCreateResource()"]')?.style.setProperty('display', canCreateResources()?'':'none');
+  document.getElementById('jiraSyncBtn')?.style.setProperty('display', canManageProjects()?'':'none');
+}
+
+async function loadMyProfile(){
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user) return null;
+  const { data } = await sb.from('profiles').select('role,full_name').eq('id', user.id).single();
+  return data;
+}
 
 function showDashboard(){
   document.getElementById('loginOverlay').classList.add('hidden');
+  applyRoleUI();
   loadMeta();
 }
 function showLogin(msg){
   document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('loginCardForm').style.display='';
+  document.getElementById('recoveryCardForm').style.display='none';
   if(msg) document.getElementById('loginErr').textContent = msg;
 }
 
-// ── вход по паролю ────────────────────────────────────────────────────────────
+async function afterLogin(){
+  myProfile = await loadMyProfile();
+  if(!myProfile){
+    await sb.auth.signOut();
+    showLogin('У вас нет доступа к этому инструменту. Обратитесь к администратору.');
+    return;
+  }
+  showDashboard();
+  loadLive();
+}
+
+function logoutDv2(){
+  sb.auth.signOut();
+  myProfile=null;
+  location.reload();
+}
+
+// ── вход через Supabase Auth ───────────────────────────────────────────────────
 async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
   const pwd = document.getElementById('loginPwd').value;
   const btn = document.getElementById('loginBtn');
   const err = document.getElementById('loginErr');
-  if(!pwd){ err.textContent='Введите пароль'; return; }
+  const msg = document.getElementById('loginMsg');
+  msg.textContent='';
+  if(!email || !pwd){ err.textContent='Введите email и пароль'; return; }
   btn.disabled = true; btn.textContent = 'Проверка…'; err.textContent = '';
   try{
-    if(!window.isSecureContext || !crypto.subtle) throw new Error('insecure-context');
-    const hash = await sha256(pwd);
-    if(hash === PASS_HASH){
-      localStorage.setItem(AUTH_KEY, hash);
-      showDashboard();
-      loadLive();
-      return;
-    }
-    err.textContent = 'Неверный пароль';
-    document.getElementById('loginPwd').select();
+    const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
+    if(error){ err.textContent = 'Неверный email или пароль'; return; }
+    await afterLogin();
   }catch(e){
-    err.textContent = e.message==='insecure-context'
-      ? 'Откройте страницу по https:// или через сервер, не файлом напрямую'
-      : 'Ошибка проверки пароля: '+(e.message||e);
+    err.textContent = 'Ошибка входа: '+(e.message||e);
   }finally{
     btn.disabled = false; btn.textContent = 'Войти';
   }
 }
 document.getElementById('loginBtn').onclick = doLogin;
 document.getElementById('loginPwd').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-// ── проверяем кеш при загрузке ────────────────────────────────────────────────
-if(localStorage.getItem(AUTH_KEY) === PASS_HASH){ showDashboard(); loadLive(); }
+document.getElementById('forgotBtn').onclick = async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const err = document.getElementById('loginErr'), msg = document.getElementById('loginMsg');
+  err.textContent='';
+  if(!email){ err.textContent='Сначала введите свой email'; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  msg.textContent = error ? ('Ошибка: '+error.message) : 'Письмо со ссылкой для смены пароля отправлено на '+email;
+};
+
+document.getElementById('recoverySaveBtn').onclick = async () => {
+  const pwd = document.getElementById('recoveryPwd').value;
+  const err = document.getElementById('recoveryErr');
+  const btn = document.getElementById('recoverySaveBtn');
+  if(!pwd || pwd.length<6){ err.textContent='Минимум 6 символов'; return; }
+  btn.disabled=true; btn.textContent='Сохраняю…';
+  const { error } = await sb.auth.updateUser({ password: pwd });
+  btn.disabled=false; btn.textContent='Сохранить пароль';
+  if(error){ err.textContent='Ошибка: '+error.message; return; }
+  await afterLogin();
+};
+
+sb.auth.onAuthStateChange((event) => {
+  if(event === 'PASSWORD_RECOVERY'){
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('loginCardForm').style.display='none';
+    document.getElementById('recoveryCardForm').style.display='';
+  }
+});
+
+// ── проверяем сессию при загрузке ─────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){ await afterLogin(); } else { showLogin(); }
+})();
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DATA = [{"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6971", "start": "2026-01-12", "end": "2026-06-30", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6972", "start": "2026-07-01", "end": "2026-08-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.6666666667, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-6973", "start": "2026-09-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.1666666667, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-6974", "start": "2026-01-12", "end": "2026-05-08", "alloc": 0.5, "q1": 0.4453125, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-6975", "start": "2026-05-08", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0, "q2": 0.05846153846, "q3": 0.0, "q4": 0.0}, {"project": "Экраны водителей погрузчиков", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-6976", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.2, "q4": 0.0}, {"project": "Автослотинг", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-10429", "start": "2026-05-18", "end": "2026-09-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Автослотинг", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-10430", "start": "2026-07-01", "end": "2026-09-10", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.7878787879, "q4": 0.0}, {"project": "Автослотинг", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-10431", "start": "2026-07-01", "end": "2026-09-10", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.7878787879, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Павел Чистяков", "cab": "https://detmir.atlassian.net/browse/CAB-6116", "start": "2026-01-12", "end": "2026-07-31", "alloc": 0.9, "q1": 0.8015625, "q2": 0.9, "q3": 0.3136363636, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-6117", "start": "2026-02-02", "end": "2026-03-13", "alloc": 1.0, "q1": 0.46875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Автозапуск", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Александр Грязнов", "cab": "https://detmir.atlassian.net/browse/CAB-6118", "start": "2026-03-02", "end": "2026-07-31", "alloc": 0.5, "q1": 0.171875, "q2": 0.5, "q3": 0.1742424242, "q4": 0.0}, {"project": "Автозапуск", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-6119", "start": "2025-01-13", "end": "2026-07-31", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.1045454545, "q4": 0.0}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Андрей Жураховский", "cab": "https://detmir.atlassian.net/browse/CAB-6289", "start": "2026-01-12", "end": "2026-12-30", "alloc": 0.7, "q1": 0.6234375, "q2": 0.7, "q3": 0.7, "q4": 0.6893939394}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-6290", "start": "2026-01-12", "end": "2026-05-08", "alloc": 0.9, "q1": 0.8015625, "q2": 0.3876923077, "q3": 0.0, "q4": 0.0}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-6291", "start": "2026-05-10", "end": "2026-12-30", "alloc": 0.3, "q1": 0.0, "q2": 0.1707692308, "q3": 0.3, "q4": 0.2954545455}, {"project": "Оптимизация процесса Приемки на РЦ", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-6292", "start": "2026-01-01", "end": "2026-12-30", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.3, "q4": 0.2954545455}, {"project": "Работа c ВГХ товара", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4942", "start": "2026-01-12", "end": "2026-07-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.1045454545, "q4": 0.0}, {"project": "Работа c ВГХ товара", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-4943", "start": "2026-01-12", "end": "2026-03-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Работа c ВГХ товара", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-4944", "start": "2026-03-02", "end": "2026-06-30", "alloc": 0.5, "q1": 0.171875, "q2": 0.5, "q3": 0.0, "q4": 0.0}, {"project": "Упаковка индивидуальная", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Реализовать общую дорожку сборки на Б-2 для отказа от PBL", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-7099", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Мультипикинг", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Без назначения", "cab": "", "start": "2026-02-02", "end": "2026-03-06", "alloc": 0.5, "q1": 0.1953125, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Мультипикинг ШП для Урала", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Андрей Жураховский", "cab": "https://detmir.atlassian.net/browse/CAB-10332", "start": "2026-03-10", "end": "2026-05-08", "alloc": 0.5, "q1": 0.125, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Обработка межскладских перемещений", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "", "start": "2026-09-01", "end": "2026-12-07", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.3333333333, "q4": 0.7272727273}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.8, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.5212121212}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.3257575758}, {"project": "Брак: разнесение потерь РЦ - ТТ", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5036", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.1, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.06515151515}, {"project": "Вторичный контроль (масштабирование)", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Аверьянов", "cab": "https://detmir.atlassian.net/browse/CAB-4858", "start": "2026-01-12", "end": "2026-06-30", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "Вторичный контроль (масштабирование)", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-4858", "start": "2026-06-01", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0, "q2": 0.03384615385, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-3072", "start": "2026-01-12", "end": "2026-02-05", "alloc": 1.0, "q1": 0.296875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Сергей Хромов", "cab": "https://detmir.atlassian.net/browse/CAB-3073", "start": "2026-03-16", "end": "2026-12-31", "alloc": 1.0, "q1": 0.1875, "q2": 1.0, "q3": 1.0, "q4": 1.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Станислав Хлобыстов", "cab": "https://detmir.atlassian.net/browse/CAB-3074", "start": "2026-03-23", "end": "2026-05-08", "alloc": 0.5, "q1": 0.0546875, "q2": 0.2153846154, "q3": 0.0, "q4": 0.0}, {"project": "Работа с марками на складе", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Станислав Хлобыстов", "cab": "https://detmir.atlassian.net/browse/CAB-3075", "start": "2026-05-10", "end": "2026-12-31", "alloc": 0.9, "q1": 0.0, "q2": 0.5123076923, "q3": 0.9, "q4": 0.9}, {"project": "Работа с марками на складе", "competency": "SAP_GIS_EDO", "manager": "Олег Саушкин", "executor": "Радик Хамитов", "cab": "https://detmir.atlassian.net/browse/CAB-3076", "start": "2026-03-12", "end": "2026-12-31", "alloc": 0.2, "q1": 0.04375, "q2": 0.2, "q3": 0.2, "q4": 0.2}, {"project": "Работа с марками на складе", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-3077", "start": "2026-01-01", "end": "2026-12-31", "alloc": 0.3, "q1": 0.3, "q2": 0.3, "q3": 0.3, "q4": 0.3}, {"project": "YMS", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4453", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.3, "q4": 0.3}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-4454", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.5, "q4": 0.5}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Хапаев", "cab": "https://detmir.atlassian.net/browse/CAB-4455", "start": "2026-07-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.5, "q4": 0.0}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Хапаев", "cab": "https://detmir.atlassian.net/browse/CAB-4456", "start": "2026-10-01", "end": "2026-12-30", "alloc": 0.9, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.8863636364}, {"project": "YMS", "competency": "SAP EWM", "manager": "Иракли Бурдули", "executor": "Дмитрий Загинайло", "cab": "https://detmir.atlassian.net/browse/CAB-4457", "start": "2026-05-11", "end": "2026-07-10", "alloc": 0.9, "q1": 0.0, "q2": 0.5123076923, "q3": 0.1090909091, "q4": 0.0}, {"project": "YMS", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Роман Поверенный", "cab": "https://detmir.atlassian.net/browse/CAB-4458", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.6, "q1": 0.534375, "q2": 0.6, "q3": 0.4, "q4": 0.0}, {"project": "YMS", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Ольга Воинова", "cab": "https://detmir.atlassian.net/browse/CAB-4459", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.3333333333, "q4": 0.0}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б1", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-8578", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б2", "competency": "CASH", "manager": "Павел Шакиров", "executor": "Наталья Золотарева", "cab": "https://detmir.atlassian.net/browse/CAB-8579", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б3", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-8580", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.1, "q1": 0.0, "q2": 0.04153846154, "q3": 0.1, "q4": 0.007575757576}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б4", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Марина Котелевская", "cab": "https://detmir.atlassian.net/browse/CAB-8581", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.03787878788}, {"project": "Реализация некондиции МП 3м лицам на РЦ Б5", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8582", "start": "2026-05-25", "end": "2026-10-07", "alloc": 0.1, "q1": 0.0, "q2": 0.04153846154, "q3": 0.1, "q4": 0.007575757576}, {"project": "Доставка ИМ с РЦ Б1 через Урал", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9306", "start": "2026-07-01", "end": "2026-08-25", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.6060606061, "q4": 0.0}, {"project": "Доставка ИМ с РЦ Б1 через Урал", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9307", "start": "2026-07-01", "end": "2026-10-30", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 1.0, "q4": 0.3333333333}, {"project": "Работа с АЕИ измерения на РЦ", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-4468", "start": "2026-04-01", "end": "2026-06-01", "alloc": 0.5, "q1": 0.0, "q2": 0.3384615385, "q3": 0.0, "q4": 0.0}, {"project": "Размещение изшликов по местам отбора по задачам", "competency": "SAP EWM", "manager": "Олег Саушкин", "executor": "Алексей Шеметов", "cab": "https://detmir.atlassian.net/browse/CAB-10122", "start": "2026-09-01", "end": "2026-10-12", "alloc": 0.5, "q1": 0.0, "q2": 0.0, "q3": 0.1666666667, "q4": 0.06060606061}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Евгений Петров", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.1, "q1": 0.0890625, "q2": 0.1, "q3": 0.1, "q4": 0.1}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Александр Грязнов", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.5, "q4": 0.5}, {"project": "Архитектура EWM", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Без назначения", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-04-01", "end": "2026-06-30", "alloc": 0.2, "q1": 0.0, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "SAP BI", "manager": "Павел Шакиров", "executor": "Сергей Егоров", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-03-18", "end": "2026-07-20", "alloc": 0.7, "q1": 0.109375, "q2": 0.7, "q3": 0.1484848485, "q4": 0.0}, {"project": "(ОТВ) Open to Buy. Исполнение и корректировка планов закупки", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8592", "start": "2026-03-18", "end": "2026-07-20", "alloc": 0.1, "q1": 0.015625, "q2": 0.1, "q3": 0.02121212121, "q4": 0.0}, {"project": "Калькулятор Импорта", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Ольга Воинова", "cab": "https://detmir.atlassian.net/browse/CAB-8545", "start": "2026-03-23", "end": "2026-06-30", "alloc": 0.7, "q1": 0.0765625, "q2": 0.7, "q3": 0.0, "q4": 0.0}, {"project": "Калькулятор Импорта", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-8545", "start": "2026-03-23", "end": "2026-06-30", "alloc": 0.1, "q1": 0.0109375, "q2": 0.1, "q3": 0.0, "q4": 0.0}, {"project": "Минимальный Нормативный Запас (МНЗ)", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Константин Пантелеев", "cab": "https://detmir.atlassian.net/browse/CAB-9381", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.2, "q1": 0.021875, "q2": 0.1938461538, "q3": 0.0, "q4": 0.0}, {"project": "Минимальный Нормативный Запас (МНЗ)", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9381", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.05, "q1": 0.00546875, "q2": 0.04846153846, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-01-12", "end": "2026-03-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-04-01", "end": "2026-05-25", "alloc": 0.8, "q1": 0.0, "q2": 0.48, "q3": 0.0, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Екатерина Рудыка", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-26", "end": "2026-08-31", "alloc": 0.3, "q1": 0.0, "q2": 0.12, "q3": 0.2, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "SAP_LO", "manager": "Олег Саушкин", "executor": "Анастасия Емельянова", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-17", "end": "2026-08-31", "alloc": 0.8, "q1": 0.0, "q2": 0.3938461538, "q3": 0.5333333333, "q4": 0.0}, {"project": "Портал ВЭД (2 этап)", "competency": "РП", "manager": "Олег Саушкин", "executor": "Олег Саушкин", "cab": "https://detmir.atlassian.net/browse/CAB-5849", "start": "2026-05-17", "end": "2026-08-31", "alloc": 0.3, "q1": 0.0, "q2": 0.1476923077, "q3": 0.2, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Хапаев Дмитрий", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-05-25", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.2076923077, "q3": 0.5, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Евгений Петров", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-05-04", "end": "2026-09-30", "alloc": 0.3, "q1": 0.0, "q2": 0.1938461538, "q3": 0.3, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Екатерина Мироничева", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-03-02", "end": "2026-09-30", "alloc": 0.9, "q1": 0.309375, "q2": 0.9, "q3": 0.9, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_GIS_EDO", "manager": "Павел Шакиров", "executor": "Владислав Костин", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.7, "q1": 0.6234375, "q2": 0.7, "q3": 0.7, "q4": 0.0}, {"project": "ЭТРН", "competency": "SAP_OD", "manager": "Павел Шакиров", "executor": "Татьяна Магдалина", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-04-01", "end": "2026-09-30", "alloc": 0.5, "q1": 0.0, "q2": 0.5, "q3": 0.5, "q4": 0.0}, {"project": "ЭТРН", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-2177", "start": "2026-01-12", "end": "2026-09-30", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.3, "q4": 0.0}, {"project": "Прогнозирование продаж (ML)", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-9897", "start": "2026-10-01", "end": "2026-12-31", "alloc": 1.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 1.0}, {"project": "Прогнозирование продаж (ML)", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9897", "start": "2026-03-02", "end": "2026-12-31", "alloc": 0.1, "q1": 0.034375, "q2": 0.1, "q3": 0.1, "q4": 0.1}, {"project": "Событийный контроль", "competency": "SAP EWM", "manager": "Павел Шакиров", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5706", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Событийный контроль", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5706", "start": "2026-10-01", "end": "2026-11-30", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Промо", "competency": "SAP_LO", "manager": "Павел Шакиров", "executor": "Евгений Савицкий", "cab": "https://detmir.atlassian.net/browse/CAB-9895", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.2, "q1": 0.021875, "q2": 0.1938461538, "q3": 0.0, "q4": 0.0}, {"project": "Промо", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-9895", "start": "2026-03-23", "end": "2026-06-26", "alloc": 0.05, "q1": 0.00546875, "q2": 0.04846153846, "q3": 0.0, "q4": 0.0}, {"project": "Задачи Автозаказа", "competency": "SAP_LO", "manager": "Компаниченко Владислав", "executor": "Константин Пантелеев", "cab": "https://detmir.atlassian.net/browse/CAB-6798", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.8, "q4": 0.8}, {"project": "Задачи Автозаказа", "competency": "SAP_LO", "manager": "Компаниченко Владислав", "executor": "Евгений Савицкий", "cab": "https://detmir.atlassian.net/browse/CAB-6798", "start": "2026-01-12", "end": "2026-12-31", "alloc": 0.8, "q1": 0.7125, "q2": 0.8, "q3": 0.8, "q4": 0.8}, {"project": "Бекасово - 3", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-8907", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.3, "q1": 0.2671875, "q2": 0.3, "q3": 0.2, "q4": 0.0}, {"project": "Бекасово - 3", "competency": "SAP_GIS_EDO", "manager": "Иракли Бурдули", "executor": "Александр Кривоногов", "cab": "https://detmir.atlassian.net/browse/CAB-8907", "start": "2026-01-12", "end": "2026-08-31", "alloc": 1.0, "q1": 0.890625, "q2": 1.0, "q3": 0.6666666667, "q4": 0.0}, {"project": "Разбор задач бэклога", "competency": "SAP EWM", "manager": "Компаниченко Владислав", "executor": "Елена Смирнова", "cab": "", "start": "2026-01-12", "end": "2026-12-31", "alloc": 1.0, "q1": 0.890625, "q2": 1.0, "q3": 1.0, "q4": 1.0}, {"project": "Модернизация шкафов выдачи ТСД", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-4534", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.2, "q1": 0.178125, "q2": 0.2, "q3": 0.1333333333, "q4": 0.0}, {"project": "Модернизация шкафов выдачи ТСД", "competency": "WEB", "manager": "Иракли Бурдули", "executor": "Владимир Иванов", "cab": "https://detmir.atlassian.net/browse/CAB-4534", "start": "2026-01-12", "end": "2026-08-31", "alloc": 0.5, "q1": 0.4453125, "q2": 0.5, "q3": 0.3333333333, "q4": 0.0}, {"project": "Интеграция с агентом ПВЗ Яндекс", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-9677", "start": "2026-04-30", "end": "2026-10-30", "alloc": 0.2, "q1": 0.0, "q2": 0.1353846154, "q3": 0.2, "q4": 0.06666666667}, {"project": "Интеграция с агентом ПВЗ Яндекс", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-9677", "start": "2026-04-30", "end": "2026-10-30", "alloc": 0.2, "q1": 0.0, "q2": 0.1353846154, "q3": 0.2, "q4": 0.06666666667}, {"project": "Интеграция с агентом Почта РФ", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-9611", "start": "2025-10-01", "end": "2026-06-30", "alloc": 0.2, "q1": 0.2, "q2": 0.2, "q3": 0.0, "q4": 0.0}, {"project": "X5 - ДМ Экспресс Доставка (LM)", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-10528", "start": "2026-05-01", "end": "2026-10-30", "alloc": 0.1, "q1": 0.0, "q2": 0.06615384615, "q3": 0.1, "q4": 0.03333333333}, {"project": "Продажа поддонов с магазинов", "competency": "РП", "manager": "Иракли Бурдули", "executor": "Иракли Бурдули", "cab": "https://detmir.atlassian.net/browse/CAB-5227", "start": "2026-06-07", "end": "2026-07-31", "alloc": 0.05, "q1": 0.0, "q2": 0.01307692308, "q3": 0.01742424242, "q4": 0.0}, {"project": "Продажа поддонов с магазинов", "competency": "SAP_LO", "manager": "Иракли Бурдули", "executor": "Без назначения", "cab": "https://detmir.atlassian.net/browse/CAB-5227", "start": "2026-06-08", "end": "2026-09-30", "alloc": 0.15, "q1": 0.0, "q2": 0.03923076923, "q3": 0.15, "q4": 0.0}, {"project": "Портал по работе с аутсорсом", "competency": "РП", "manager": "Павел Шакиров", "executor": "Павел Шакиров", "cab": "https://detmir.atlassian.net/browse/CAB-5966", "start": "2026-05-04", "end": "2026-12-31", "alloc": 0.05, "q1": 0.0, "q2": 0.03230769231, "q3": 0.05, "q4": 0.05}, {"project": "Реализация мобильного приложения для  собственных курьеров", "competency": "SAP_LO", "manager": "Илья Троян", "executor": "Александр Климов", "cab": "https://detmir.atlassian.net/browse/CAB-8483", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}, {"project": "Реализация мобильного приложения для  собственных курьеров", "competency": "РП", "manager": "Илья Троян", "executor": "Илья Троян", "cab": "https://detmir.atlassian.net/browse/CAB-8483", "start": "", "end": "", "alloc": 0.0, "q1": 0.0, "q2": 0.0, "q3": 0.0, "q4": 0.0}];
@@ -1177,12 +1271,13 @@ function renderPlan(rows){
     if(byExec){
       // в режиме «По исполнителям» — разбивка по задачам (полосы по проектам)
       const subs = g.rows.slice().sort((a,b)=> (+new Date(a.start)-+new Date(b.start)) );
+      const canEdit=canEditAssignments();
       subs.forEach(t=>{
         const v=planVal(t);
-        h+=`<div class="prow sub edit-row" onclick="openEditAssignment('${t._aid}')">
+        h+=`<div class="prow sub${canEdit?' edit-row':''}"${canEdit?` onclick="openEditAssignment('${t._aid}')"`:''}>
           <div class="pleft"><div class="ptop"><span class="nm" title="${t.project}">${t.project}</span>
             <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
-            <span class="edit-hint">✏</span></div>
+            ${canEdit?'<span class="edit-hint">✏</span>':''}</div>
             <div class="pbot"><span class="compsm">${t.competency}</span><span class="sep">·</span><span>${fmtDate(t.start)}→${fmtDate(t.end)}</span></div></div>
           ${taskBar(t)}</div>`;
       });
@@ -1203,13 +1298,14 @@ function renderPlan(rows){
         ers.forEach(r=>{ if(vd(r.start)&&(!vd(mn)||r.start<mn))mn=r.start; if(vd(r.end)&&(!vd(mx)||r.end>mx))mx=r.end; });
         const span=(vd(mn)||vd(mx))?(fmtDate(mn)+'→'+fmtDate(mx)):'без срока';
         const nzad=ers.length>1?` <span class="sep">·</span><span>${ers.length} зад.</span>`:'';
-        const editAct=ers.length===1
+        const isEdit=ers.length===1 && canEditAssignments();
+        const editAct=isEdit
           ? `openEditAssignment('${ers[0]._aid}')`
-          : `openDrillByProject('${ers[0]._pid}')`;
-        h+=`<div class="prow sub edit-row" onclick="${editAct}">
+          : (ers.length>1 ? `openDrillByProject('${ers[0]._pid}')` : '');
+        h+=`<div class="prow sub${editAct?' edit-row':''}"${editAct?` onclick="${editAct}"`:''}>
           <div class="pleft"><div class="ptop"><span class="nm" title="${ex}">${ex}</span>
             <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
-            <span class="edit-hint">✏</span></div>
+            ${isEdit?'<span class="edit-hint">✏</span>':''}</div>
             <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nzad}</div></div>
           <div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${monthStripCells(ers)}</div></div>`;
       });
@@ -1329,12 +1425,12 @@ function openCellDrill(ri, mi){
       <div class="mtitle">Без назначения · ${MONTHS[mi]}</div>
       <div class="mtags"><span class="tagc" style="background:var(--c-over);color:#fff;font-weight:700">${items.length} позиций без исполнителя</span></div>
       <div class="msec">Проекты, ожидающие назначения · ${items.length}</div>
-      ${items.map(o=>`<div class="mrow edit-row" title="Назначить исполнителя" onclick="closeDrill();openAddAssignment('${o.r._pid}')">
+      ${items.map(o=>`<div class="mrow${canEditAssignments()?' edit-row':''}" ${canEditAssignments()?`title="Назначить исполнителя" onclick="closeDrill();openAddAssignment('${o.r._pid}')"`:''}>
           <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
             <div class="sub2">${o.r.competency}${o.r.manager&&o.r.manager!=='—'?' · РП: '+o.r.manager:''}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span class="loadpill" style="background:var(--c-over);color:#fff">${Math.round(o.load*100)}%</span>
-            <span class="edit-hint">＋</span>
+            ${canEditAssignments()?'<span class="edit-hint">＋</span>':''}
           </div>
         </div>`).join('')}
     `;
@@ -1382,10 +1478,10 @@ function openDrill(idx){
   const members=Object.entries(memMap).sort((a,b)=>(b[1].q1+b[1].q2+b[1].q3+b[1].q4)-(a[1].q1+a[1].q2+a[1].q3+a[1].q4));
   const tags = byExec
     ? `<span class="statusbadge sb-${st.cls}">${st.label}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
-      +(g.rows[0]?._rid ? `<button class="tag-edit-btn" onclick="openEditResource('${g.rows[0]._rid}')">✏ ред.</button>` : '')
+      +(g.rows[0]?._rid && canEditResources() ? `<button class="tag-edit-btn" onclick="openEditResource('${g.rows[0]._rid}')">✏ ред.</button>` : '')
     : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
       +(g.rows[0]?.tags||[]).map(t=>`<span class="tagc">${t}</span>`).join('')+cabBadge(cabOf(g.rows))
-      +`<button class="tag-edit-btn" onclick="openEditProject('${g.rows[0]?._pid}')">✏ ред.</button>`;
+      +(canManageProjects() ? `<button class="tag-edit-btn" onclick="openEditProject('${g.rows[0]?._pid}')">✏ ред.</button>` : '');
   const card=`
     <button class="mclose" onclick="closeDrill()">✕</button>
     <div class="mtitle">${key}</div>
@@ -1421,12 +1517,13 @@ function openDrill(idx){
             }).join('');
             // всегда: header + сабстроки периодов + кнопка добавить
             const rid=ers[0]._rid;
+            const canEdit=canEditAssignments();
             const periodRows=ers.map(r=>{
               const dates=(vd(r.start)||vd(r.end))?fmtDate(r.start)+' → '+fmtDate(r.end):'без дат';
-              return `<div class="dtl-period" onclick="openEditAssignment('${r._aid}')">
+              return `<div class="dtl-period"${canEdit?` onclick="openEditAssignment('${r._aid}')"`:''}>
                 <span class="pdates">${dates}</span>
                 <span class="loadpill" style="background:${loadColor(r.alloc)}">${Math.round(r.alloc*100)}%</span>
-                <span class="edit-hint">✏</span>
+                ${canEdit?'<span class="edit-hint">✏</span>':''}
               </div>`;
             }).join('');
             return `<div class="dtl-row dtl-row-hdr">
@@ -1438,11 +1535,11 @@ function openDrill(idx){
               </div>
               <div class="dtl-periods">
                 ${periodRows}
-                <div class="dtl-period dtl-period-add" onclick="openAddAssignment('${g.rows[0]?._pid}','${rid}')">＋ добавить период</div>
+                ${canEdit?`<div class="dtl-period dtl-period-add" onclick="openAddAssignment('${g.rows[0]?._pid}','${rid}')">＋ добавить период</div>`:''}
               </div>`;
           }).join('');
           return `<div class="drill-tl">${hdr}${rows}</div>
-            <button class="add-row-btn" onclick="openAddAssignment('${g.rows[0]?._pid}')">＋ Добавить исполнителя</button>`;
+            ${canEditAssignments()?`<button class="add-row-btn" onclick="openAddAssignment('${g.rows[0]?._pid}')">＋ Добавить исполнителя</button>`:''}`;
         })()
     }
     ${(!byExec && ALL_PROJECTS.find(p=>p.id===g.rows[0]?._pid)?.status_report) ? `
@@ -1476,6 +1573,7 @@ function openDrillByProject(pid){
 const COMPETENCIES=['SAP EWM','SAP_LO','SAP_OD','SAP BI','SAP_GIS_EDO','CASH','WEB','РП'];
 
 function openEditAssignment(aid){
+  if(!canEditAssignments()){ denyAccess(); return; }
   const r=ROWS.find(row=>row._aid===aid);
   if(!r){ alert('Назначение не найдено'); return; }
   const curName=ALL_RESOURCES.find(res=>res.id===r._rid)?.name??'';
@@ -1522,6 +1620,7 @@ function openEditAssignment(aid){
 }
 
 async function saveAssignment(aid){
+  if(!canEditAssignments()){ denyAccess(); return; }
   const rname=document.getElementById('ea-rid').value;
   const comp=document.getElementById('ea-comp').value;
   const start=document.getElementById('ea-start').value||null;
@@ -1547,6 +1646,7 @@ async function saveAssignment(aid){
 }
 
 async function deleteAssignment(aid){
+  if(!canEditAssignments()){ denyAccess(); return; }
   if(!confirm('Удалить это назначение?')) return;
   const row=ROWS.find(r=>r._aid===aid);
   const pid=row?._pid;
@@ -1572,6 +1672,7 @@ async function deleteAssignment(aid){
 }
 
 async function deleteProject(pid){
+  if(!canManageProjects()){ denyAccess(); return; }
   if(!confirm('Удалить проект и все его назначения? Это действие нельзя отменить.')) return;
   try{
     const {error:e1}=await sb.from('assignments').delete().eq('project_id',pid);
@@ -1587,6 +1688,7 @@ async function deleteProject(pid){
 
 // ── добавление исполнителя в проект ──────────────────────────────────────────
 function openAddAssignment(pid, rid=null){
+  if(!canEditAssignments()){ denyAccess(); return; }
   if(!pid){ alert('Не удалось определить проект'); return; }
   _periodIdx=0;
   const proj=ALL_PROJECTS.find(p=>p.id===pid);
@@ -1620,6 +1722,7 @@ function openAddAssignment(pid, rid=null){
 }
 
 async function saveAddAssignment(pid){
+  if(!canEditAssignments()){ denyAccess(); return; }
   const rname=document.getElementById('aa-rid').value;
   const comp=document.getElementById('aa-comp').value;
   const btn=document.getElementById('aa-savebtn');
@@ -1785,13 +1888,18 @@ function updateCabPreview(url){
   const badge=cabBadge(url);
   el.innerHTML=badge||'<span style="font-size:11px;color:var(--txt3)">вставьте ссылку — появится кнопка</span>';
 }
-function openCreateProject(){ openEditModal(_projectForm(null)); }
+function openCreateProject(){
+  if(!canManageProjects()){ denyAccess(); return; }
+  openEditModal(_projectForm(null));
+}
 function openEditProject(pid){
+  if(!canManageProjects()){ denyAccess(); return; }
   const p=ALL_PROJECTS.find(pr=>pr.id===pid);
   if(!p){ alert('Проект не найден'); return; }
   openEditModal(_projectForm(p));
 }
 async function saveProject(pid){
+  if(!canManageProjects()){ denyAccess(); return; }
   const name=document.getElementById('ep-name').value.trim();
   if(!name){ alert('Введите название проекта'); return; }
   const btn=document.getElementById('ep-savebtn');
@@ -1858,15 +1966,20 @@ function _resourceForm(r){
     </div>`;
 }
 
-function openCreateResource(){ openEditModal(_resourceForm(null)); }
+function openCreateResource(){
+  if(!canCreateResources()){ denyAccess(); return; }
+  openEditModal(_resourceForm(null));
+}
 
 async function openEditResource(rid){
+  if(!canEditResources()){ denyAccess(); return; }
   const {data,error}=await sb.from('resources').select('id,name,competency,active').eq('id',rid).single();
   if(error||!data){ alert('Исполнитель не найден'); return; }
   openEditModal(_resourceForm(data));
 }
 
 async function saveResource(rid){
+  if(rid ? !canEditResources() : !canCreateResources()){ denyAccess(); return; }
   const name=document.getElementById('er-name').value.trim();
   if(!name){ alert('Введите имя исполнителя'); return; }
   const btn=document.getElementById('er-savebtn');
@@ -1890,6 +2003,7 @@ async function saveResource(rid){
 }
 
 async function deactivateResource(rid){
+  if(!canEditResources()){ denyAccess(); return; }
   if(!confirm('Деактивировать исполнителя? Он исчезнет из списков для новых назначений, текущие назначения сохранятся.')) return;
   try{
     const {error}=await sb.from('resources').update({active:false}).eq('id',rid);
@@ -1900,6 +2014,7 @@ async function deactivateResource(rid){
 }
 
 async function activateResource(rid){
+  if(!canEditResources()){ denyAccess(); return; }
   try{
     const {error}=await sb.from('resources').update({active:true}).eq('id',rid);
     if(error) throw error;
@@ -1967,6 +2082,7 @@ function mapToRows(data){
   });
 }
 async function syncFromJira(){
+  if(!canManageProjects()){ denyAccess(); return; }
   const btn=document.getElementById('jiraSyncBtn');
   btn.disabled=true; btn.textContent='⇅ Синхронизация…';
   setStatus('load','синхронизация с Jira…');
