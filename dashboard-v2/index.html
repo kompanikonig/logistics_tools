@@ -291,6 +291,13 @@ body.dark .cell.clk:hover{outline-color:rgba(255,255,255,.5)}
 
 .empty{text-align:center;color:var(--txt3);padding:50px;font-size:14px}
 .hint{font-family:var(--mono);font-size:11px;color:var(--txt3);margin-top:14px}
+
+.logtbl{width:100%;border-collapse:collapse;font-size:13px}
+.logtbl th{text-align:left;padding:8px 12px;border-bottom:1.5px solid var(--line2);color:var(--txt2);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
+.logtbl td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.logtbl tr:hover td{background:var(--bg2)}
+.logwhen{font-family:var(--mono);font-size:12px;color:var(--txt2);white-space:nowrap}
+.logrole{font-family:var(--mono);font-size:10px;color:var(--txt3);background:var(--bg2);padding:1px 6px;border-radius:5px}
 .view{display:none} .view.on{display:block}
 
 /* dark theme */
@@ -612,6 +619,15 @@ input[type="date"].ef-inp{cursor:pointer}
       <div id="dashList"></div>
     </div>
   </div>
+
+  <!-- LOG: журнал действий (только admin) -->
+  <div class="view" id="v-log">
+    <div class="panel">
+      <h2>Журнал действий</h2>
+      <div class="ph">Кто и когда менял проекты, назначения и исполнителей. Видно только администратору.</div>
+      <div id="logList"></div>
+    </div>
+  </div>
 </div>
 
 <div id="drill" class="modal" hidden><div class="modal-bg" id="drillBg"></div><div class="modal-card" id="drillCard"></div></div>
@@ -637,6 +653,12 @@ function canManageProjects(){ return isAdmin(); }
 function canEditResources(){ return isAdmin(); }
 function canCreateResources(){ return isAdmin() || isPM(); }
 function denyAccess(){ alert('Недостаточно прав для этого действия (роль: '+(myProfile?.role||'?')+').'); }
+function logAction(action, entity, entityName){
+  sb.from('activity_log').insert({
+    actor_email: myProfile?.email||null, actor_name: myProfile?.full_name||null, actor_role: myProfile?.role||null,
+    action, entity, entity_name: entityName,
+  }).then(({error})=>{ if(error) console.warn('activity_log:', error.message); });
+}
 function applyRoleUI(){
   const badge=document.getElementById('roleBadgeDv2');
   badge.style.display='';
@@ -649,7 +671,7 @@ function applyRoleUI(){
 async function loadMyProfile(){
   const { data: { user } } = await sb.auth.getUser();
   if(!user) return null;
-  const { data } = await sb.from('profiles').select('role,full_name').eq('id', user.id).single();
+  const { data } = await sb.from('profiles').select('role,full_name,email').eq('id', user.id).single();
   return data;
 }
 
@@ -864,9 +886,10 @@ function buildQ(){
   });
 }
 const TABS=[['over','Обзор'],['plan','Детализация'],['ba','Загрузка БА'],['dash','Дашборд']];
+function getTabs(){ return isAdmin() ? [...TABS,['log','Журнал']] : TABS; }
 function buildTabs(){
   const el=document.getElementById('tabs');el.innerHTML='';
-  TABS.forEach(([k,lbl])=>{
+  getTabs().forEach(([k,lbl])=>{
     const b=document.createElement('button');
     b.className='tab'+(state.view===k?' on':'');
     b.textContent=lbl;
@@ -1394,6 +1417,25 @@ function renderDash(rows){
     </div>`;
   }).join('') || '<div class="empty">Нет проектов под текущий фильтр</div>';
 }
+const LOG_ACTION_LABELS={create:'создал(а)',update:'изменил(а)',delete:'удалил(а)',deactivate:'деактивировал(а)',activate:'активировал(а)'};
+const LOG_ENTITY_LABELS={project:'проект',assignment:'назначение',resource:'исполнителя'};
+async function renderLog(){
+  const el=document.getElementById('logList');
+  el.innerHTML='<div class="empty">Загрузка…</div>';
+  const {data,error}=await sb.from('activity_log').select('*').order('created_at',{ascending:false}).limit(300);
+  if(error){ el.innerHTML=`<div class="empty">Ошибка загрузки: ${esc(error.message)}</div>`; return; }
+  if(!data||!data.length){ el.innerHTML='<div class="empty">Пока нет записей</div>'; return; }
+  el.innerHTML=`<table class="logtbl">
+    <thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Объект</th></tr></thead>
+    <tbody>${data.map(r=>{
+      const d=new Date(r.created_at);
+      const when=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+      const who=esc(r.actor_name||r.actor_email||'—')+(r.actor_role?` <span class="logrole">${esc(r.actor_role)}</span>`:'');
+      const action=(LOG_ACTION_LABELS[r.action]||r.action)+' '+(LOG_ENTITY_LABELS[r.entity]||r.entity);
+      return `<tr><td class="logwhen">${when}</td><td>${who}</td><td>${esc(action)}</td><td>${esc(r.entity_name||'—')}</td></tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
 function renderBA(){
   const ax=BA.axis;
   let h='';
@@ -1646,6 +1688,8 @@ async function saveAssignment(aid){
       start_date:start, end_date:end, alloc_percent:alloc,
     }).eq('id',aid);
     if(error) throw error;
+    const projName=ROWS.find(row=>row._aid===aid)?.project||'';
+    logAction('update','assignment', `${projName} — ${rname||'без исполнителя'}`);
     closeEditModal();
     await Promise.all([loadLive(),loadMeta()]);
     refreshDrillIfOpen();
@@ -1661,6 +1705,7 @@ async function deleteAssignment(aid){
   const row=ROWS.find(r=>r._aid===aid);
   const pid=row?._pid;
   try{
+    logAction('delete','assignment', `${row?.project||''} — ${row?.executor||'без исполнителя'}`);
     await sbDelete('assignments',aid);
     if(pid){
       const {data}=await sb.from('assignments').select('id').eq('project_id',pid);
@@ -1684,11 +1729,13 @@ async function deleteAssignment(aid){
 async function deleteProject(pid){
   if(!canManageProjects()){ denyAccess(); return; }
   if(!confirm('Удалить проект и все его назначения? Это действие нельзя отменить.')) return;
+  const projName=ALL_PROJECTS.find(p=>p.id===pid)?.name||'';
   try{
     const {error:e1}=await sb.from('assignments').delete().eq('project_id',pid);
     if(e1) throw e1;
     const {error:e2}=await sb.from('projects').delete().eq('id',pid);
     if(e2) throw e2;
+    logAction('delete','project', projName);
     closeEditModal();
     await Promise.all([loadLive(),loadMeta()]);
   }catch(e){
@@ -1756,6 +1803,8 @@ async function saveAddAssignment(pid){
     }));
     const {error}=await sb.from('assignments').insert(inserts);
     if(error) throw error;
+    const projName=ALL_PROJECTS.find(p=>p.id===pid)?.name||'';
+    logAction('create','assignment', `${projName} — ${rname||'без исполнителя'}`);
     closeEditModal();
     await Promise.all([loadLive(),loadMeta()]);
     refreshDrillIfOpen();
@@ -1930,6 +1979,7 @@ async function saveProject(pid){
     if(pid){
       const {error}=await sb.from('projects').update(payload).eq('id',pid);
       if(error) throw error;
+      logAction('update','project', name);
       closeEditModal();
       await Promise.all([loadLive(),loadMeta()]);
       refreshDrillIfOpen();
@@ -1942,6 +1992,7 @@ async function saveProject(pid){
         competency:payload.competency||'', alloc_percent:0,
         start_date:payload.start_date||null, end_date:payload.end_date||null,
       });
+      logAction('create','project', name);
       closeEditModal();
       await Promise.all([loadLive(),loadMeta()]);
       openAddAssignment(data.id);
@@ -1999,9 +2050,11 @@ async function saveResource(rid){
     if(rid){
       const {error}=await sb.from('resources').update(payload).eq('id',rid);
       if(error) throw error;
+      logAction('update','resource', name);
     } else {
       const {error}=await sb.from('resources').insert({...payload, active:true});
       if(error) throw error;
+      logAction('create','resource', name);
     }
     closeEditModal();
     await Promise.all([loadLive(),loadMeta()]);
@@ -2015,9 +2068,11 @@ async function saveResource(rid){
 async function deactivateResource(rid){
   if(!canEditResources()){ denyAccess(); return; }
   if(!confirm('Деактивировать исполнителя? Он исчезнет из списков для новых назначений, текущие назначения сохранятся.')) return;
+  const name=document.getElementById('er-name')?.value||'';
   try{
     const {error}=await sb.from('resources').update({active:false}).eq('id',rid);
     if(error) throw error;
+    logAction('deactivate','resource', name);
     closeEditModal();
     await Promise.all([loadLive(),loadMeta()]);
   }catch(e){ alert('Ошибка: '+(e.message||e)); }
@@ -2025,9 +2080,11 @@ async function deactivateResource(rid){
 
 async function activateResource(rid){
   if(!canEditResources()){ denyAccess(); return; }
+  const name=document.getElementById('er-name')?.value||'';
   try{
     const {error}=await sb.from('resources').update({active:true}).eq('id',rid);
     if(error) throw error;
+    logAction('activate','resource', name);
     closeEditModal();
     await Promise.all([loadLive(),loadMeta()]);
   }catch(e){ alert('Ошибка: '+(e.message||e)); }
@@ -2046,7 +2103,7 @@ function render(){
   document.getElementById('v-'+state.view).classList.add('on');
   const rows=filtered();
   const isBA = state.view==='ba';
-  document.querySelector('.filters').style.display = isBA?'none':'';
+  document.querySelector('.filters').style.display = (isBA||state.view==='log')?'none':'';
   document.getElementById('legendHM').innerHTML=heatLegend();
   wireHeatLegend();
   if(isBA) document.getElementById('legendBA').innerHTML=legendHTML();
@@ -2058,6 +2115,7 @@ function render(){
   if(state.view==='plan'){renderPlan(rows);}
   if(isBA){renderBA();}
   if(state.view==='dash'){renderDash(rows);}
+  if(state.view==='log'){renderLog();}
 }
 buildFilters();render();
 
