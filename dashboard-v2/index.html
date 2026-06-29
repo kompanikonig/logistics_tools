@@ -1353,7 +1353,6 @@ function renderPlan(rows){
           : (ers.length>1 ? `openDrillByProject('${ers[0]._pid}')` : '');
         h+=`<div class="prow sub${editAct?' edit-row':''}"${editAct?` onclick="${editAct}"`:''}>
           <div class="pleft"><div class="ptop"><span class="nm" title="${ex}">${ex}</span>
-            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
             ${isEdit?'<span class="edit-hint">✏</span>':''}</div>
             <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nzad}</div></div>
           <div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${monthStripCells(ers)}</div></div>`;
