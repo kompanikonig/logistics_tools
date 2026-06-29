@@ -1315,7 +1315,6 @@ function renderPlan(rows){
       const canEdit=canEditAssignments();
       projKeys.forEach(pname=>{
         const rows=byProj[pname];
-        const v=rows.reduce((s,r)=>s+planVal(r),0);
         const comps=[...new Set(rows.map(r=>r.competency))].sort().join(' ');
         let mn='',mx='';
         rows.forEach(r=>{ if(vd(r.start)&&(!vd(mn)||r.start<mn))mn=r.start; if(vd(r.end)&&(!vd(mx)||r.end>mx))mx=r.end; });
@@ -1325,7 +1324,6 @@ function renderPlan(rows){
         const clickAct=isEdit?`openEditAssignment('${rows[0]._aid}')`:(rows.length>1?`openDrillByProject('${rows[0]._pid}')`:'');
         h+=`<div class="prow sub${clickAct?' edit-row':''}"${clickAct?` onclick="${clickAct}"`:''}>
           <div class="pleft"><div class="ptop"><span class="nm" title="${pname}">${pname}</span>
-            <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
             ${isEdit?'<span class="edit-hint">✏</span>':''}</div>
             <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nper}</div></div>
           ${taskBarMulti(rows)}</div>`;
