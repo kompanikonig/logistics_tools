@@ -1222,18 +1222,20 @@ function renderPlan(rows){
   }
 
   // build one task bar (thin) for sub-rows
-  function taskBar(t){
-    const v=planVal(t);
-    if(!vd(t.start) || !vd(t.end))
-      return `<div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>
-        <div class="nobar">без срока</div></div>`;
-    const l=pos(t.start), w=Math.max(1.2,pos(t.end)-l);
-    const col=MGR_COLORS[t.manager]||'#888';
-    const showTxt=w>14;
-    return `<div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>
-      <div class="pbar" style="left:${l}%;width:${w}%;background:${col}99" title="${t.project} · ${t.executor} · ${fmtDate(t.start)}–${fmtDate(t.end)} · ${t.competency} · загрузка ${ftelbl}: ${fmtPct(v)}">
-        <div class="pfill" style="width:100%;background:${col}"></div>${showTxt?'<span>'+fmtDate(t.end)+'</span>':''}</div>
-      ${dlMarker(t.end, v>0&&(+new Date(t.end)-(+TODAY))/86400000<=30?'var(--c-over)':'var(--txt2)')}</div>`;
+  function taskBarMulti(rows){
+    const dated=rows.filter(r=>vd(r.start)&&vd(r.end));
+    if(!dated.length) return `<div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div><div class="nobar">без срока</div></div>`;
+    const bars=dated.map(t=>{
+      const v=planVal(t);
+      const l=pos(t.start), w=Math.max(1.2,pos(t.end)-l);
+      const col=MGR_COLORS[t.manager]||'#888';
+      const showTxt=w>14;
+      return `<div class="pbar" style="left:${l}%;width:${w}%;background:${col}99" title="${t.project} · ${t.executor} · ${fmtDate(t.start)}–${fmtDate(t.end)} · ${t.competency} · загрузка ${ftelbl}: ${fmtPct(v)}">
+        <div class="pfill" style="width:100%;background:${col}"></div>${showTxt?'<span>'+fmtDate(t.end)+'</span>':''}</div>`;
+    }).join('');
+    const last=dated.reduce((m,r)=>(!m||r.end>m.end)?r:m);
+    return `<div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${bars}
+      ${dlMarker(last.end, planVal(last)>0&&(+new Date(last.end)-(+TODAY))/86400000<=30?'var(--c-over)':'var(--txt2)')}</div>`;
   }
 
   function monthStripCells(rowsArr){
@@ -1302,17 +1304,31 @@ function renderPlan(rows){
 
     // sub rows
     if(byExec){
-      // в режиме «По исполнителям» — разбивка по задачам (полосы по проектам)
-      const subs = g.rows.slice().sort((a,b)=> (+new Date(a.start)-+new Date(b.start)) );
+      // в режиме «По исполнителям» — разбивка по проектам, периоды одного проекта схлопнуты в одну строку
+      const byProj={};
+      g.rows.forEach(r=>{ (byProj[r.project]=byProj[r.project]||[]).push(r); });
+      const projMinStart=rows=>{
+        const dates=rows.filter(r=>vd(r.start)).map(r=>+new Date(r.start));
+        return dates.length?Math.min(...dates):Infinity;
+      };
+      const projKeys=Object.keys(byProj).sort((a,b)=>projMinStart(byProj[a])-projMinStart(byProj[b]));
       const canEdit=canEditAssignments();
-      subs.forEach(t=>{
-        const v=planVal(t);
-        h+=`<div class="prow sub${canEdit?' edit-row':''}"${canEdit?` onclick="openEditAssignment('${t._aid}')"`:''}>
-          <div class="pleft"><div class="ptop"><span class="nm" title="${t.project}">${t.project}</span>
+      projKeys.forEach(pname=>{
+        const rows=byProj[pname];
+        const v=rows.reduce((s,r)=>s+planVal(r),0);
+        const comps=[...new Set(rows.map(r=>r.competency))].sort().join(' ');
+        let mn='',mx='';
+        rows.forEach(r=>{ if(vd(r.start)&&(!vd(mn)||r.start<mn))mn=r.start; if(vd(r.end)&&(!vd(mx)||r.end>mx))mx=r.end; });
+        const span=(vd(mn)||vd(mx))?(fmtDate(mn)+'→'+fmtDate(mx)):'без срока';
+        const nper=rows.length>1?` <span class="sep">·</span><span>${rows.length} пер.</span>`:'';
+        const isEdit=rows.length===1 && canEdit;
+        const clickAct=isEdit?`openEditAssignment('${rows[0]._aid}')`:(rows.length>1?`openDrillByProject('${rows[0]._pid}')`:'');
+        h+=`<div class="prow sub${clickAct?' edit-row':''}"${clickAct?` onclick="${clickAct}"`:''}>
+          <div class="pleft"><div class="ptop"><span class="nm" title="${pname}">${pname}</span>
             <span class="loadpill" style="background:${loadColor(v)}">${v>0?fmtPct(v):'—'}</span>
-            ${canEdit?'<span class="edit-hint">✏</span>':''}</div>
-            <div class="pbot"><span class="compsm">${t.competency}</span><span class="sep">·</span><span>${fmtDate(t.start)}→${fmtDate(t.end)}</span></div></div>
-          ${taskBar(t)}</div>`;
+            ${isEdit?'<span class="edit-hint">✏</span>':''}</div>
+            <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nper}</div></div>
+          ${taskBarMulti(rows)}</div>`;
       });
     } else {
       // в режиме «По проектам» — 1 строка на исполнителя, помесячная полоса загрузки на этом проекте
