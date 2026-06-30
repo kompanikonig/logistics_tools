@@ -253,11 +253,6 @@ body.dark .cell.clk:hover{outline-color:rgba(255,255,255,.5)}
 .prow.sub .pbar{height:13px}
 .psub{display:none}
 .nobar{position:absolute;top:50%;left:8px;transform:translateY(-50%);font-family:var(--mono);font-size:9.5px;color:var(--txt3);font-style:italic}
-.baperson{margin-bottom:18px}
-.basum{font-family:var(--body);font-weight:500;font-size:12.5px;color:var(--txt2);margin-left:8px}
-.batotal .rh{font-weight:800;color:var(--txt)}
-.batotal td .cell{font-weight:800}
-.batotal th.rh,.batotal td{border-top:2px solid var(--line2);padding-top:3px}
 .pgroup.open .psub{display:block}
 .statusbadge{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
 .sb-plan{background:rgba(0,163,224,.15);color:#0277b6}
@@ -586,7 +581,7 @@ input[type="date"].ef-inp{cursor:pointer}
     <div class="panel">
       <h2>Детализация · проекты, сроки и загрузка · 2026</h2>
       <div class="ph">Строка = проект или исполнитель: слева сводка и загрузка, справа полоса на шкале месяцев. Нажмите на строку, чтобы раскрыть детализацию. В режиме «По проектам» цвет полос — руководитель; в режиме «По исполнителям» строка показывает суммарную загрузку по месяцам (цвет — уровень загрузки, число — % ставки).</div>
-      <div class="gtoggle"><span class="gtlabel">Группировка:</span>
+      <div class="gtoggle" id="planGtoggle"><span class="gtlabel">Группировка:</span>
         <button class="gtbtn" data-g="project">По проектам</button>
         <button class="gtbtn" data-g="executor">По исполнителям</button>
         <span class="gtlabel" style="margin-left:8px">Сортировка:</span>
@@ -599,14 +594,21 @@ input[type="date"].ef-inp{cursor:pointer}
     </div>
   </div>
 
-  <!-- BA LOAD -->
+  <!-- BA LOAD: та же «Детализация», отфильтрованная по компетенции БА -->
   <div class="view" id="v-ba">
     <div class="panel">
-      <h2>Загрузка бизнес-аналитиков · по полумесяцам</h2>
-      <div class="ph">Доля рабочего времени по периодам (1-15 / 15-30). 100% = полная занятость. Строка «Итого» — суммарная загрузка БА; красный — перегруз. Источник — отдельный файл «Загрузка БА».</div>
-      <div class="legend" id="legendBA"></div>
+      <h2>Загрузка БА · проекты, сроки и загрузка · 2026</h2>
+      <div class="ph">То же представление, что и «Детализация», отфильтрованное по компетенции «БА». Строка = проект или исполнитель, клик раскрывает детализацию и позволяет редактировать назначение.</div>
+      <div class="gtoggle" id="baGtoggle"><span class="gtlabel">Группировка:</span>
+        <button class="gtbtn" data-g="project">По проектам</button>
+        <button class="gtbtn" data-g="executor">По исполнителям</button>
+        <span class="gtlabel" style="margin-left:8px">Сортировка:</span>
+        <select id="baSortSel" class="sortsel"></select>
+        <span style="flex:1"></span>
+        <span class="gtlabel" id="baCount"></span>
+      </div>
       <div class="scrollhint">← листайте таблицу по горизонтали →</div>
-      <div id="baWrap"></div>
+      <div class="planwrap"><div class="plantbl" id="baTbl"></div></div>
     </div>
   </div>
 
@@ -777,7 +779,7 @@ const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','
 const MGR_COLORS = {};
 const palette = ['#6b9bc3','#86a96b','#d4a85a','#cc8072','#9487bb','#5f7e9e','#c08aa6'];
 
-let state = {q:'all', view:'over', mgrs:[], comps:[], tags:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future'};
+let state = {q:'all', view:'over', mgrs:[], comps:[], tags:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future', baGanttBy:'project', baSort:''};
 const TAGS_LIST = ['Склад','Транспорт','Курьерская доставка'];
 const MANAGERS_LIST = ['Павел Шакиров','Олег Саушкин','Иракли Бурдули','Компаниченко Владислав','Илья Троян'];
 function managersOptions(){
@@ -839,7 +841,6 @@ function mergeRows(arr){
   return Object.values(m);
 }
 let ROWS = mergeRows(DATA);
-const BA = {"people": [{"person": "Троян", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": true, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}], "tasks": [{"project": "Планирование прогнозирование", "ticket": "", "loads": {"01H1": 0.5, "01H2": 0.5, "02H1": 0.2, "02H2": 0.2, "03H2": 0.1, "04H1": 0.4, "04H2": 0.4, "05H1": 0.2, "05H2": 0.2}}, {"project": "Шкафы ТСД", "ticket": "", "loads": {"01H2": 0.2, "02H1": 0.1, "02H2": 0.1, "04H1": 0.15, "04H2": 0.15, "05H1": 0.3, "05H2": 0.3}}, {"project": "Мультипикинг +  МП ШП Урал", "ticket": "", "loads": {"01H1": 0.4, "01H2": 0.2, "02H1": 0.2, "02H2": 0.2, "03H2": 0.2, "04H1": 0.05, "04H2": 0.05, "05H1": 0.05, "05H2": 0.05}}, {"project": "АЕИ", "ticket": "", "loads": {"02H1": 0.4, "02H2": 0.5, "03H2": 0.5}}, {"project": "Обработка марок импорт", "ticket": "", "loads": {"04H1": 0.3, "04H2": 0.3, "05H1": 0.3, "05H2": 0.3}}, {"project": "Курьерская доставка", "ticket": "", "loads": {"05H1": 0.05, "05H2": 0.05}}, {"project": "РЦ через кассу", "ticket": "", "loads": {"02H2": 0.1, "03H2": 0.1}}, {"project": "Марки (масштабирование)", "ticket": "", "loads": {}}, {"project": "Автозаказ", "ticket": "", "loads": {"01H1": 0.1, "01H2": 0.1, "02H1": 0.1, "02H2": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1, "05H1": 0.1, "05H2": 0.1}}], "total": {"01H1": 1.0, "01H2": 1.0, "02H1": 1.0, "02H2": 1.2, "03H1": 0.0, "03H2": 1.0, "04H1": 1.0, "04H2": 1.0, "05H1": 1.0, "05H2": 1.0}}, {"person": "Куренная", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}, {"key": "06H1", "lbl": "Июн 1-19", "vac": false, "m": 6, "half": "H1"}, {"key": "06H2", "lbl": "Июн 22-30", "vac": true, "m": 6, "half": "H2"}], "tasks": [{"project": "Портал ВЭД CAB-5849", "ticket": "CAB-5849", "loads": {"01H2": 0.3, "02H1": 0.3, "02H2": 0.3, "03H1": 0.3, "03H2": 0.3, "04H1": 0.3, "04H2": 0.3, "05H1": 0.2, "05H2": 0.2, "06H1": 0.2}}, {"project": "ЭТРН CAB-2177", "ticket": "CAB-2177", "loads": {"01H2": 0.3, "02H1": 0.3, "02H2": 0.3, "03H1": 0.3, "03H2": 0.4, "04H1": 0.4, "04H2": 0.3, "05H1": 0.3, "05H2": 0.3, "06H1": 0.3}}, {"project": "Портал по работе с аутсорсом", "ticket": "", "loads": {"02H1": 0.2}}, {"project": "Тайминг отправки заказов\nCAB-10192", "ticket": "CAB-10192", "loads": {"01H2": 0.4, "02H1": 0.2, "02H2": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1, "05H1": 0.1, "05H2": 0.1, "06H1": 0.2}}, {"project": "Корректировка тарифов СК\nCAB-10612", "ticket": "CAB-10612", "loads": {"06H1": 0.2}}, {"project": "Инструмент мониторинга", "ticket": "", "loads": {"02H2": 0.1, "03H1": 0.1}}, {"project": "ДУИТ задачи", "ticket": "", "loads": {"03H2": 0.2}}, {"project": "Поставки с Честным знаком", "ticket": "", "loads": {"02H2": 0.2}}, {"project": "Приемка", "ticket": "", "loads": {"04H1": 0.2, "04H2": 0.2, "05H1": 0.2, "05H2": 0.2}}, {"project": "Поставки из ЕАЭС Спот", "ticket": "", "loads": {"05H1": 0.2, "05H2": 0.2}}], "total": {"01H1": 0.0, "01H2": 1.0, "02H1": 1.0, "02H2": 1.0, "03H1": 0.7, "03H2": 1.0, "04H1": 1.0, "04H2": 0.9, "05H1": 1.0, "05H2": 1.0, "06H1": 0.9, "06H2": 0.0}}, {"person": "Климова", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}, {"key": "06H1", "lbl": "Июн 1-15", "vac": false, "m": 6, "half": "H1"}, {"key": "06H2", "lbl": "Июн 15-30", "vac": false, "m": 6, "half": "H2"}, {"key": "07H1", "lbl": "Июл 1-15", "vac": false, "m": 7, "half": "H1"}, {"key": "07H2", "lbl": "Июл 15-30", "vac": false, "m": 7, "half": "H2"}], "tasks": [{"project": "Брак - разнесение потерь", "ticket": "CAB-5036", "loads": {"01H2": 0.2, "02H1": 0.2, "02H2": 0.1, "03H1": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1, "05H1": 0.1, "05H2": 0.1}}, {"project": "Автозапуск онлайн + агенты", "ticket": "CAB-6116", "loads": {"03H2": 0.2, "04H1": 0.2, "04H2": 0.2}}, {"project": "Скорости самовывоза", "ticket": "CAB-9892", "loads": {"01H2": 0.2, "02H1": 0.3, "02H2": 0.2, "03H1": 0.2, "03H2": 0.2, "04H1": 0.2, "04H2": 0.2, "05H1": 0.1, "05H2": 0.1, "06H1": 0.1, "06H2": 0.1}}, {"project": "Размещение излишков по местам отбора по задачам", "ticket": "CAB-10122", "loads": {"01H2": 0.2, "02H1": 0.4, "02H2": 0.3, "03H1": 0.3, "03H2": 0.2}}, {"project": "Вторичный контроль комплектования", "ticket": "CAB-5146", "loads": {"01H2": 0.1, "02H1": 0.1, "02H2": 0.1}}, {"project": "Автослотинг ( +хранение)", "ticket": "CAB-10429", "loads": {"03H2": 0.3, "04H1": 0.5, "04H2": 0.3, "05H1": 0.3, "05H2": 0.3}}, {"project": "ЛК для Аутсорса", "ticket": "", "loads": {"01H2": 0.3}}, {"project": "Интеграция Агентов", "ticket": "CAB-10528", "loads": {"02H2": 0.3, "03H1": 0.3, "05H1": 0.3, "05H2": 0.3, "06H1": 0.1, "06H2": 0.1}}, {"project": "Продажа 3м лицам", "ticket": "CAB-10509", "loads": {"05H1": 0.2, "05H2": 0.2, "06H1": 0.1, "06H2": 0.1}}, {"project": "Озон КЗ", "ticket": "CAB-9772", "loads": {"06H1": 0.4, "06H2": 0.4}}, {"project": "Разбор MI", "ticket": "CAB-7764", "loads": {"06H1": 0.1, "06H2": 0.1}}, {"project": "Отчетность Lassie", "ticket": "", "loads": {"06H1": 0.2, "06H2": 0.2}}], "total": {"01H1": 1.0, "01H2": 1.0, "02H1": 1.0, "02H2": 1.0, "03H1": 0.9, "03H2": 1.0, "04H1": 1.0, "04H2": 0.8, "05H1": 1.0, "05H2": 1.0, "06H1": 1.0, "06H2": 1.0, "07H1": 0.0, "07H2": 0.0}}, {"person": "Комина", "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}], "tasks": [{"project": "YMS Локалы", "ticket": "", "loads": {"01H1": 0.6, "01H2": 0.5, "02H1": 0.3, "02H2": 0.1, "03H1": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1}}, {"project": "YMS Общий пункт обработки (Маркетплейс)", "ticket": "", "loads": {"01H1": 0.3, "01H2": 0.2, "02H1": 0.4, "02H2": 0.3, "03H1": 0.3, "03H2": 0.3}}, {"project": "МПК", "ticket": "", "loads": {"01H1": 0.1, "01H2": 0.1, "02H1": 0.1, "02H2": 0.1, "03H1": 0.1, "03H2": 0.1, "04H1": 0.1, "04H2": 0.1}}, {"project": "YMS Импорт", "ticket": "", "loads": {}}, {"project": "Доставка ИМ б1 через Урал", "ticket": "", "loads": {"02H2": 0.3, "03H1": 0.3, "03H2": 0.3}}, {"project": "Приемка (масштабирование)", "ticket": "", "loads": {"04H1": 0.3, "04H2": 0.3}}, {"project": "Смена логики выбора Агента при отгрузке с РЦ", "ticket": "", "loads": {"02H2": 0.2, "03H1": 0.2, "03H2": 0.2}}], "total": {"01H1": 1.0, "01H2": 0.8, "02H1": 0.8, "02H2": 1.0, "03H1": 1.0, "03H2": 1.0, "04H1": 0.5, "04H2": 0.5}}], "axis": [{"key": "01H1", "lbl": "Янв 12-15", "vac": false, "m": 1, "half": "H1"}, {"key": "01H2", "lbl": "Янв 15-30", "vac": false, "m": 1, "half": "H2"}, {"key": "02H1", "lbl": "Фев 1-15", "vac": false, "m": 2, "half": "H1"}, {"key": "02H2", "lbl": "Фев 15-30", "vac": false, "m": 2, "half": "H2"}, {"key": "03H1", "lbl": "Мар 1-15", "vac": false, "m": 3, "half": "H1"}, {"key": "03H2", "lbl": "Мар 15-30", "vac": false, "m": 3, "half": "H2"}, {"key": "04H1", "lbl": "Апр 1-15", "vac": false, "m": 4, "half": "H1"}, {"key": "04H2", "lbl": "Апр 15-30", "vac": false, "m": 4, "half": "H2"}, {"key": "05H1", "lbl": "Май 1-15", "vac": false, "m": 5, "half": "H1"}, {"key": "05H2", "lbl": "Май 15-30", "vac": false, "m": 5, "half": "H2"}, {"key": "06H1", "lbl": "Июн 1-15", "vac": false, "m": 6, "half": "H1"}, {"key": "06H2", "lbl": "Июн 15-30", "vac": false, "m": 6, "half": "H2"}, {"key": "07H1", "lbl": "Июл 1-15", "vac": false, "m": 7, "half": "H1"}, {"key": "07H2", "lbl": "Июл 15-30", "vac": false, "m": 7, "half": "H2"}]};
 
 function matchF(r){
   if(state.mgrs.length && !state.mgrs.includes(r.manager)) return false;
@@ -1091,9 +1092,6 @@ function renderHeatmap(){
 
 // ---- legend ----
 const ZONES=[['low','<50% свободен','var(--c-low)'],['mid','50–85%','var(--c-mid)'],['full','85–100% оптимум','var(--c-full)'],['high','100–125% перегруз','var(--c-high)'],['over','>125% критично','var(--c-over)']];
-function legendHTML(){
-  return ZONES.map(([k,lbl,c])=>`<span><i class="sw" style="background:${c}"></i>${lbl.replace('<','&lt;').replace('>','&gt;')}</span>`).join('\n  ');
-}
 function heatLegend(){
   const btn=(k,lbl,sw)=>{const on=state.zones.includes(k);
     return `<button class="zbtn${on?' on':''}" data-zone="${k}">${sw}${lbl}</button>`;};
@@ -1179,11 +1177,20 @@ function statusOf(r){
 // ---- plan: projects + timeline merged ----
 function planVal(t){return state.q==='all' ? (t.q1+t.q2+t.q3+t.q4)/4 : (t[state.q]||0);}
 
-function renderPlan(rows){
+function renderPlan(rows, opts){
+  opts = opts || {};
+  const tblId = opts.tblId || 'planTbl';
+  const countId = opts.countId || 'planCount';
+  const sortId = opts.sortId || 'planSort';
+  const gtoggleSel = opts.gtoggleSel || '#planGtoggle .gtbtn';
+  const ganttByKey = opts.ganttByKey || 'ganttBy';
+  const sortStateKey = opts.sortStateKey || 'sort';
+  const getRows = opts.getRows || (()=>filtered());
+
   const Y0=+new Date('2026-01-01'), Y1=+new Date('2026-12-31'), SPAN=Y1-Y0;
   const pos=d=>Math.max(0,Math.min(100,(+new Date(d)-Y0)/SPAN*100));
   const todayPos=(+TODAY-Y0)/SPAN*100;
-  const byExec=state.ganttBy==='executor';
+  const byExec=state[ganttByKey]==='executor';
   const ftelbl=state.q==='all'?'сред/год':QS.find(x=>x[0]===state.q)[1];
 
   // group
@@ -1198,7 +1205,7 @@ function renderPlan(rows){
   const SORTS = byExec
     ? [['load','по загрузке'],['name','по имени'],['deadline','по дедлайну']]
     : [['start','по старту'],['deadline','по дедлайну'],['load','по загрузке'],['status','по статусу']];
-  let sortKey = SORTS.some(s=>s[0]===state.sort) ? state.sort : SORTS[0][0];
+  let sortKey = SORTS.some(s=>s[0]===state[sortStateKey]) ? state[sortStateKey] : SORTS[0][0];
   const stRank={over:0,soon:1,run:2,plan:3,done:4};
   const dnum=(k,which)=>{ const d=G[k][which]; return vd(d)?+new Date(d):Infinity; };
   const cmp={
@@ -1287,7 +1294,7 @@ function renderPlan(rows){
         ${qstrip}</div>`;
     } else {
       leftHTML=`<div class="pleft">
-        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${escAttr(key)}" onclick="event.stopPropagation();openDrill(${gi})">${esc(key)}</span>
+        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${escAttr(key)}" onclick="event.stopPropagation();openDrillByProject('${g.rows[0]?._pid}')">${esc(key)}</span>
           <span class="statusbadge sb-${st.cls}">${st.label}</span>${cabBadge(cabOf(g.rows))}</div>
         <div class="pbot"><span>${fmtDate(g.min)}→${fmtDate(g.max)}</span>${daysLabel(g.max)}
           <span class="sep">·</span><span>РП ${esc([...g.mgrs].join(', '))}</span>
@@ -1359,19 +1366,18 @@ function renderPlan(rows){
     h+=`</div></div>`;
   });
 
-  const el=document.getElementById('planTbl');
+  const el=document.getElementById(tblId);
   el.innerHTML = keys.length? h : '<div class="empty">Нет данных по выбранным фильтрам</div>';
-  document.getElementById('planCount').textContent = keys.length+(byExec?' исполнителей':' проектов');
-  document.querySelectorAll('.gtbtn').forEach(b=>{
-    b.classList.toggle('on', b.dataset.g===state.ganttBy);
-    b.onclick=()=>{state.ganttBy=b.dataset.g; renderPlan(filtered());};
+  document.getElementById(countId).textContent = keys.length+(byExec?' исполнителей':' проектов');
+  document.querySelectorAll(gtoggleSel).forEach(b=>{
+    b.classList.toggle('on', b.dataset.g===state[ganttByKey]);
+    b.onclick=()=>{state[ganttByKey]=b.dataset.g; renderPlan(getRows(),opts);};
   });
-  const sel=document.getElementById('planSort');
+  const sel=document.getElementById(sortId);
   sel.innerHTML=SORTS.map(([v,l])=>`<option value="${v}"${v===sortKey?' selected':''}>${l}</option>`).join('');
-  sel.onchange=()=>{ state.sort=sel.value; renderPlan(filtered()); };
+  sel.onchange=()=>{ state[sortStateKey]=sel.value; renderPlan(getRows(),opts); };
 }
 
-// ---- BA load (half-month matrix) ----
 function renderDash(rows){
   const pidSet=new Set(rows.map(r=>r._pid).filter(Boolean));
   const projects=ALL_PROJECTS.filter(p=>pidSet.has(p.id) && p.show_on_dashboard!==false);
@@ -1449,31 +1455,6 @@ async function renderLog(){
     }).join('')}</tbody>
   </table>`;
 }
-function renderBA(){
-  const ax=BA.axis;
-  let h='';
-  BA.people.filter(p=>p.person!=='Комина').forEach(p=>{
-    const totVals=ax.map(a=>p.total[a.key]).filter(v=>v!=null);
-    const avg=totVals.length?totVals.reduce((a,b)=>a+b,0)/totVals.length:0;
-    let peak=0,peakLbl='';
-    ax.forEach(a=>{const v=p.total[a.key]||0; if(v>peak){peak=v;peakLbl=a.lbl;}});
-    h+=`<div class="panel baperson"><h2>${p.person}
-      <span class="basum">сред ${fmtPct(avg)} · пик ${fmtPct(peak)}${peakLbl?' ('+peakLbl+')':''} · ${p.tasks.length} задач</span></h2>
-      <div class="hm"><table class="hmtbl"><thead><tr><th class="rh">Задача</th>`+
-      ax.map(a=>`<th class="mh">${a.lbl.replace(' ','<br>')}</th>`).join('')+`</tr></thead><tbody>`;
-    p.tasks.forEach(t=>{
-      h+=`<tr><th class="rh"><div class="hmname">${t.project}</div>${t.ticket?`<div class="hmcomps"><span class="hmcomp">${t.ticket}</span></div>`:''}</th>`+
-        ax.map(a=>{const v=t.loads[a.key]; const z=v==null;
-          return `<td><div class="cell mcell ${z?'zero':''}" style="background:${z?'':loadColor(v)}" title="${a.lbl}: ${z?'—':fmtPct(v)}">${z?'·':Math.round(v*100)}</div></td>`;}).join('')+`</tr>`;
-    });
-    h+=`<tr class="batotal"><th class="rh">Итого</th>`+
-      ax.map(a=>{const v=p.total[a.key]; const z=v==null;
-        return `<td><div class="cell mcell ${z?'zero':''}" style="background:${z?'':loadColor(v)}" title="${a.lbl}: ${z?'—':fmtPct(v)}">${z?'·':Math.round(v*100)}</div></td>`;}).join('')+`</tr>`;
-    h+=`</tbody></table></div></div>`;
-  });
-  document.getElementById('baWrap').innerHTML = h || '<div class="empty">Нет данных БА</div>';
-}
-
 // ---- drill-down modal ----
 let DRILL=[];
 let HM_LAST=[];
@@ -1634,7 +1615,7 @@ function openDrillByProject(pid){
 }
 
 // ── редактирование назначения ─────────────────────────────────────────────────
-const COMPETENCIES=['SAP EWM','SAP_LO','SAP_OD','SAP BI','SAP_GIS_EDO','CASH','WEB','РП'];
+const COMPETENCIES=['SAP EWM','SAP_LO','SAP_OD','SAP BI','SAP_GIS_EDO','CASH','WEB','РП','БА'];
 
 function openEditAssignment(aid){
   if(!canEditAssignments()){ denyAccess(); return; }
@@ -2118,14 +2099,16 @@ function render(){
   document.querySelector('.filters').style.display = (isBA||state.view==='log')?'none':'';
   document.getElementById('legendHM').innerHTML=heatLegend();
   wireHeatLegend();
-  if(isBA) document.getElementById('legendBA').innerHTML=legendHTML();
   if(state.view==='over'){renderKPI(rows);renderHeatmap();
     const hz=[['future','С текущего месяца'],['year','Весь год']];
     document.getElementById('planHzPills').innerHTML=hz.map(([k,l])=>`<button class="qpill${state.planHorizon===k?' on':''}" data-hz="${k}">${l}</button>`).join('');
     document.querySelectorAll('#planHzPills .qpill').forEach(b=>b.onclick=()=>{state.planHorizon=b.dataset.hz;render();});
     document.getElementById('planCompFilter').innerHTML=planCompLegend(); wirePlanCompLegend(); renderPlanning();}
   if(state.view==='plan'){renderPlan(rows);}
-  if(isBA){renderBA();}
+  if(isBA){
+    const baRows=()=>filtered().filter(r=>r.competency==='БА');
+    renderPlan(baRows(), {tblId:'baTbl', countId:'baCount', sortId:'baSortSel', gtoggleSel:'#baGtoggle .gtbtn', ganttByKey:'baGanttBy', sortStateKey:'baSort', getRows:baRows});
+  }
   if(state.view==='dash'){renderDash(rows);}
   if(state.view==='log'){renderLog();}
 }
