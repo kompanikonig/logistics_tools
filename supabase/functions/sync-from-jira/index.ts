@@ -12,6 +12,22 @@ function absolutizePaths(html: string, baseUrl: string): string {
   return html.replace(/(src|href)="\/(?!\/)/g, `$1="${baseUrl}/`);
 }
 
+// status_report рендерится на фронте как сырой innerHTML (dashboard-v2 drill-модалка и вкладка
+// «Дашборд») — без этой очистки скомпрометированный/случайно испорченный Jira-тикет мог бы
+// положить в отчёт <script>/обработчики событий, которые выполнятся у каждого, кто откроет
+// карточку проекта. Чистим один раз здесь, на входе, а не на каждом месте рендера.
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<\/?(iframe|object|embed|link|meta|form|base)\b[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
@@ -43,7 +59,7 @@ Deno.serve(async (req) => {
         if (!res.ok) { errors.push({ project_id: p.id, issue: issueKey, error: `Jira ${res.status}` }); continue; }
         const data = await res.json();
         let html: string | null = data.renderedFields?.[STATUS_REPORT_FIELD] ?? null;
-        if (html) html = absolutizePaths(html, JIRA_BASE_URL);
+        if (html) html = sanitizeHtml(absolutizePaths(html, JIRA_BASE_URL));
 
         const { error: upErr } = await sb.from('projects').update({ status_report: html }).eq('id', p.id);
         if (upErr) { errors.push({ project_id: p.id, issue: issueKey, error: upErr.message }); continue; }

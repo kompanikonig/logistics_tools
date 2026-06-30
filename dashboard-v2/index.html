@@ -988,7 +988,7 @@ function renderPlanning(){
     '<th class="mh">Своб.<br><span style="color:var(--txt3)">сред.</span></th></tr></thead><tbody>';
   list.forEach(o=>{
     const comps=onlyAllowed(o.v.comps).map(c=>`<span class="hmcomp">${c}</span>`).join('');
-    ah+=`<tr><th class="rh"><div class="hmname">${o.n}</div><div class="hmcomps">${comps}</div></th>`+
+    ah+=`<tr><th class="rh"><div class="hmname">${esc(o.n)}</div><div class="hmcomps">${comps}</div></th>`+
       months.map(mi=>{const f=o.free[mi],z=f<=0.05;return `<td><div class="cell mcell${z?' zero':''}" style="background:${freeColor(f)}" title="${MONTHS[mi]}: свободно ${fmtPct(f)}">${z?'·':Math.round(f*100)}</div></td>`;}).join('')+
       `<td><div class="cell" style="background:${freeColor(o.tot/months.length)}">${Math.round(o.tot/months.length*100)}%</div></td></tr>`;
   });
@@ -1017,8 +1017,8 @@ function renderPlanning(){
     months.forEach(mi=>{ const v=monthLoad(r,mi),z=v<=0.005,left=(mi-startM)*100/months.length,wid=100/months.length;
       strip+=`<div class="mload${z?' z':''}" style="left:${left}%;width:${wid}%;${z?'':'background:'+loadColor(v)}" title="${MONTHS[mi]}: ${fmtPct(v)}">${z?'':Math.round(v*100)}</div>`; });
     nh+=`<div class="needrow">
-      <div class="needmeta"><div class="needname">${r.project} ${cabBadge(r.cab)}</div>
-        <div class="needsub"><span class="hmcomp">${r.competency}</span> · РП ${r.manager} · ${(vd(r.start)||vd(r.end))?fmtDate(r.start)+'→'+fmtDate(r.end):'без срока'}</div></div>
+      <div class="needmeta"><div class="needname">${esc(r.project)} ${cabBadge(r.cab)}</div>
+        <div class="needsub"><span class="hmcomp">${r.competency}</span> · РП ${esc(r.manager)} · ${(vd(r.start)||vd(r.end))?fmtDate(r.start)+'→'+fmtDate(r.end):'без срока'}</div></div>
       <div class="ptrack needtrack">${strip}</div></div>`;
   });
   document.getElementById('needRes').innerHTML=nh;
@@ -1076,7 +1076,7 @@ function renderHeatmap(){
   list.forEach(([name,v],ri)=>{
     const comps=[...v.comps].sort().map(c=>`<span class="hmcomp">${c}</span>`).join('');
     const avg=sum(v)/12;
-    h+=`<tr><th class="rh"><div class="hmname">${name}</div><div class="hmcomps">${comps}</div></th>`+
+    h+=`<tr><th class="rh"><div class="hmname">${esc(name)}</div><div class="hmcomps">${comps}</div></th>`+
       v.m.map((val,mi)=>{
         const z=val<=0.005;
         if(z && zeroSel) return `<td><div class="cell mcell free" title="не занят">0</div></td>`;
@@ -1128,7 +1128,7 @@ function renderExecBars(rows){
     const tval=t=> isAll ? (t.q1+t.q2+t.q3+t.q4)/4 : (t[state.q]||0);
     const tasks=d.tasks.sort((a,b)=>tval(b)-tval(a)).map(t=>{
       const st=statusOf(t);
-      return `<div class="dtask"><div class="dp" title="${t.project}">${t.project}</div>
+      return `<div class="dtask"><div class="dp" title="${escAttr(t.project)}">${esc(t.project)}</div>
         <div class="dc">${t.competency}</div>
         <div class="dd">${st.short}</div>
         <div class="dl" style="color:${loadColor(tval(t))}">${fmtPct(tval(t))}</div></div>`;
@@ -1230,7 +1230,7 @@ function renderPlan(rows){
       const l=pos(t.start), w=Math.max(1.2,pos(t.end)-l);
       const col=MGR_COLORS[t.manager]||'#888';
       const showTxt=w>14;
-      return `<div class="pbar" style="left:${l}%;width:${w}%;background:${col}99" title="${t.project} · ${t.executor} · ${fmtDate(t.start)}–${fmtDate(t.end)} · ${t.competency} · загрузка ${ftelbl}: ${fmtPct(v)}">
+      return `<div class="pbar" style="left:${l}%;width:${w}%;background:${col}99" title="${escAttr(t.project)} · ${escAttr(t.executor)} · ${fmtDate(t.start)}–${fmtDate(t.end)} · ${t.competency} · загрузка ${ftelbl}: ${fmtPct(v)}">
         <div class="pfill" style="width:100%;background:${col}"></div>${showTxt?'<span>'+fmtDate(t.end)+'</span>':''}</div>`;
     }).join('');
     const last=dated.reduce((m,r)=>(!m||r.end>m.end)?r:m);
@@ -1266,7 +1266,7 @@ function renderPlan(rows){
         monthStripCells(g.rows)
       : // project head: single span bar with schedule-progress fill + deadline marker
         (hasDates
-          ? `<div class="pbar proj" style="left:${l}%;width:${w}%;background:${headCol}55" title="${key} · ${fmtDate(g.min)}–${fmtDate(g.max)} · прогресс по сроку ${Math.round(progFrac*100)}%">
+          ? `<div class="pbar proj" style="left:${l}%;width:${w}%;background:${headCol}55" title="${escAttr(key)} · ${fmtDate(g.min)}–${fmtDate(g.max)} · прогресс по сроку ${Math.round(progFrac*100)}%">
                <div class="pfill" style="width:${progFrac*100}%;background:${headCol}"></div><span>${fmtDate(g.max)}</span></div>
              ${dlMarker(g.max, st.cls==='soon'||st.cls==='over'?'var(--c-over)':'var(--txt2)')}`
           : `<div class="nobar">без срока</div>`);
@@ -1279,7 +1279,7 @@ function renderPlan(rows){
             return `<i style="background:${loadColor(qv)}" title="${l}: ${fmtPct(qv)}"></i>`;}).join('')}</div>`
         : '';
       leftHTML=`<div class="pleft">
-        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${key}" onclick="event.stopPropagation();openDrill(${gi})">${key}</span>
+        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${escAttr(key)}" onclick="event.stopPropagation();openDrill(${gi})">${esc(key)}</span>
           <span class="loadpill" style="background:${capCol}">${fmtPct(totV)}</span>
           <span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${state.q==='all'?'сред/год':QS.find(x=>x[0]===state.q)[1]}</span></div>
         <div class="capmini"><div class="track"><div class="fill" style="width:${capW}%;background:${capCol}"></div><div class="cap" style="left:${capPos}%"></div></div></div>
@@ -1287,10 +1287,10 @@ function renderPlan(rows){
         ${qstrip}</div>`;
     } else {
       leftHTML=`<div class="pleft">
-        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${key}" onclick="event.stopPropagation();openDrill(${gi})">${key}</span>
+        <div class="ptop"><span class="car">▶</span><span class="nm nmlink" title="${escAttr(key)}" onclick="event.stopPropagation();openDrill(${gi})">${esc(key)}</span>
           <span class="statusbadge sb-${st.cls}">${st.label}</span>${cabBadge(cabOf(g.rows))}</div>
         <div class="pbot"><span>${fmtDate(g.min)}→${fmtDate(g.max)}</span>${daysLabel(g.max)}
-          <span class="sep">·</span><span>РП ${[...g.mgrs].join(', ')}</span>
+          <span class="sep">·</span><span>РП ${esc([...g.mgrs].join(', '))}</span>
           <span class="sep">·</span><span>${new Set(g.rows.map(r=>r.executor)).size} исп.</span></div>
       </div>`;
     }
@@ -1323,7 +1323,7 @@ function renderPlan(rows){
         const isEdit=rows.length===1 && canEdit;
         const clickAct=isEdit?`openEditAssignment('${rows[0]._aid}')`:(rows.length>1?`openDrillByProject('${rows[0]._pid}')`:'');
         h+=`<div class="prow sub${clickAct?' edit-row':''}"${clickAct?` onclick="${clickAct}"`:''}>
-          <div class="pleft"><div class="ptop"><span class="nm" title="${pname}">${pname}</span>
+          <div class="pleft"><div class="ptop"><span class="nm" title="${escAttr(pname)}">${esc(pname)}</span>
             ${isEdit?'<span class="edit-hint">✏</span>':''}</div>
             <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nper}</div></div>
           ${taskBarMulti(rows)}</div>`;
@@ -1350,7 +1350,7 @@ function renderPlan(rows){
           ? `openEditAssignment('${ers[0]._aid}')`
           : (ers.length>1 ? `openDrillByProject('${ers[0]._pid}')` : '');
         h+=`<div class="prow sub${editAct?' edit-row':''}"${editAct?` onclick="${editAct}"`:''}>
-          <div class="pleft"><div class="ptop"><span class="nm" title="${ex}">${ex}</span>
+          <div class="pleft"><div class="ptop"><span class="nm" title="${escAttr(ex)}">${esc(ex)}</span>
             ${isEdit?'<span class="edit-hint">✏</span>':''}</div>
             <div class="pbot"><span class="compsm">${comps}</span><span class="sep">·</span><span>${span}</span>${nzad}</div></div>
           <div class="ptrack"><div class="ptoday" style="left:${todayPos}%"></div>${monthStripCells(ers)}</div></div>`;
@@ -1420,8 +1420,8 @@ function renderDash(rows){
     return `<div class="dash-card" onclick="openDrillByProject('${p.id}')">
       <div class="dash-head">
         <div>
-          <div class="dash-title">${p.name}</div>
-          <div class="dash-mgr">РП ${p.manager&&p.manager!=='—'?p.manager:'—'}</div>
+          <div class="dash-title">${esc(p.name)}</div>
+          <div class="dash-mgr">РП ${p.manager&&p.manager!=='—'?esc(p.manager):'—'}</div>
         </div>
         <span class="statusbadge sb-${st.cls}">${st.label}</span>
       </div>
@@ -1491,8 +1491,8 @@ function openCellDrill(ri, mi){
       <div class="mtags"><span class="tagc" style="background:var(--c-over);color:#fff;font-weight:700">${items.length} позиций без исполнителя</span></div>
       <div class="msec">Проекты, ожидающие назначения · ${items.length}</div>
       ${items.map(o=>`<div class="mrow${canEditAssignments()?' edit-row':''}" ${canEditAssignments()?`title="Назначить исполнителя" onclick="closeDrill();openAddAssignment('${o.r._pid}')"`:''}>
-          <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
-            <div class="sub2">${o.r.competency}${o.r.manager&&o.r.manager!=='—'?' · РП: '+o.r.manager:''}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
+          <div><div class="who">${esc(o.r.project)} ${cabBadge(o.r.cab)}</div>
+            <div class="sub2">${o.r.competency}${o.r.manager&&o.r.manager!=='—'?' · РП: '+esc(o.r.manager):''}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span class="loadpill" style="background:var(--c-over);color:#fff">${Math.round(o.load*100)}%</span>
             ${canEditAssignments()?'<span class="edit-hint">＋</span>':''}
@@ -1503,11 +1503,11 @@ function openCellDrill(ri, mi){
     const total=items.reduce((s,o)=>s+o.load,0);
     card=`
       <button class="mclose" onclick="closeDrill()">✕</button>
-      <div class="mtitle">${name} · ${MONTHS[mi]}</div>
+      <div class="mtitle">${esc(name)} · ${MONTHS[mi]}</div>
       <div class="mtags"><span class="tagc" style="background:${loadColor(total)};color:#06140f;font-weight:700">${Math.round(total*100)}% загрузка</span>${[...v.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')}</div>
       <div class="msec">Проекты в этом месяце · ${items.length}<span class="edit-hint"> · клик — карточка проекта</span></div>
       ${items.map(o=>`<div class="mrow edit-row" onclick="openDrillByProject('${o.r._pid}')">
-          <div><div class="who">${o.r.project} ${cabBadge(o.r.cab)}</div>
+          <div><div class="who">${esc(o.r.project)} ${cabBadge(o.r.cab)}</div>
             <div class="sub2">${o.r.competency}${(vd(o.r.start)||vd(o.r.end))?' · '+fmtDate(o.r.start)+'→'+fmtDate(o.r.end):''}</div></div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="loadpill" style="background:${loadColor(o.load)}">${Math.round(o.load*100)}%</span>
@@ -1544,12 +1544,12 @@ function openDrill(idx){
   const tags = byExec
     ? `<span class="statusbadge sb-${st.cls}">${st.label}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
       +(g.rows[0]?._rid && canEditResources() ? `<button class="tag-edit-btn" onclick="openEditResource('${g.rows[0]._rid}')">✏ ред.</button>` : '')
-    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${[...g.mgrs].join(', ')}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
+    : `<span class="statusbadge sb-${st.cls}">${st.label}</span><span class="tagc mgr">РП ${esc([...g.mgrs].join(', '))}</span>`+[...g.comps].sort().map(c=>`<span class="tagc comp">${c}</span>`).join('')
       +(g.rows[0]?.tags||[]).map(t=>`<span class="tagc">${t}</span>`).join('')+cabBadge(cabOf(g.rows))
       +(canManageProjects() ? `<button class="tag-edit-btn" onclick="openEditProject('${g.rows[0]?._pid}')">✏ ред.</button>` : '');
   const card=`
     <button class="mclose" onclick="closeDrill()">✕</button>
-    <div class="mtitle">${key}</div>
+    <div class="mtitle">${esc(key)}</div>
     <div class="mtags">${tags}</div>
     <div class="mstat">
       <div class="b"><div class="v">${period==='без срока'?'—':period}</div><div class="l">Период</div></div>
@@ -1561,7 +1561,7 @@ function openDrill(idx){
     <div class="msec" style="margin-top:14px">${byExec?'Проекты исполнителя':'Исполнители · '+members.length}<span class="edit-hint">${byExec?'':'· клик — редактировать'}</span></div>
     ${byExec
       ? members.map(([mk,m])=>`<div class="mrow">
-          <div><div class="who">${mk}</div><div class="sub2">${[...m.comps].sort().join(' · ')}${(vd(m.min)||vd(m.max))?' · '+fmtDate(m.min)+'→'+fmtDate(m.max):''}</div></div>
+          <div><div class="who">${esc(mk)}</div><div class="sub2">${[...m.comps].sort().join(' · ')}${(vd(m.min)||vd(m.max))?' · '+fmtDate(m.min)+'→'+fmtDate(m.max):''}</div></div>
           ${qchips(m)}
         </div>`).join('')
       : (()=>{
@@ -1647,7 +1647,7 @@ function openEditAssignment(aid){
   openEditModal(`
     <button class="mclose" onclick="closeEditModal()">✕</button>
     <div class="mtitle">Назначение</div>
-    <div class="mtags"><span class="tagc comp">${r.project}</span></div>
+    <div class="mtags"><span class="tagc comp">${esc(r.project)}</span></div>
     <div class="ef">
       <div class="ef-row">
         <label>Исполнитель</label>
@@ -1769,7 +1769,7 @@ function openAddAssignment(pid, rid=null){
   openEditModal(`
     <button class="mclose" onclick="closeEditModal()">✕</button>
     <div class="mtitle">${title}</div>
-    <div class="mtags"><span class="tagc comp">${proj?.name??'—'}</span></div>
+    <div class="mtags"><span class="tagc comp">${esc(proj?.name??'—')}</span></div>
     <div class="ef">
       <div class="ef-row">
         <label>Исполнитель</label>
