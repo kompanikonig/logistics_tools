@@ -780,7 +780,7 @@ const MGR_COLORS = {};
 const palette = ['#6b9bc3','#86a96b','#d4a85a','#cc8072','#9487bb','#5f7e9e','#c08aa6'];
 
 let state = {q:'all', view:'over', mgrs:[], comps:[], tags:[], search:'', ganttBy:'project', zones:[], sort:'', theme:'light', planComps:[], planHorizon:'future', baGanttBy:'project', baSort:''};
-const TAGS_LIST = ['Склад','Транспорт','Курьерская доставка'];
+const TAGS_LIST = ['Склад','Транспорт','Курьерская доставка','ДПП','ДУТЗ','Другие направления'];
 const MANAGERS_LIST = ['Павел Шакиров','Олег Саушкин','Иракли Бурдули','Компаниченко Владислав','Илья Троян'];
 function managersOptions(){
   const fromData=(ALL_PROJECTS||[]).map(p=>p.manager).filter(Boolean);
