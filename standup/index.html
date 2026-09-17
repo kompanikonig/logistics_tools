@@ -163,6 +163,9 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 .ytask.pending .ytext{font-weight:600}
 .ynote{font-size:11px;color:var(--txt2);margin-top:2px;font-style:italic}
 .ycue{flex:none;font-size:10.5px;font-weight:700;color:var(--moved);align-self:center;white-space:nowrap}
+.thead{display:flex;align-items:center;gap:8px;padding:10px 15px 2px;border-top:1px solid var(--line)}
+.thead .tlabel{font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent-d)}
+body.dark .thead .tlabel{color:var(--accent)}
 
 /* blocker panel */
 .blockpanel{background:rgba(139,92,246,.07);border:1px solid var(--block);border-radius:14px;
@@ -506,6 +509,7 @@ function cardHTML(name, pdata, iso, editable){
     </div>
     ${noteHTML}
     ${yesterdayHTML}
+    <div class="thead"><span class="tlabel">Сегодня · ${fmtDate(iso)}</span></div>
     <div class="counts"><span><b>${tasks.length}</b> задач</span><span><b>${done}</b> ✓</span></div>
     <div class="tasks">${tasksHTML}</div>
     ${addHTML}
