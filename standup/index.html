@@ -152,7 +152,9 @@ body.dark .cfgbar code{background:rgba(255,255,255,.08)}
 .ytasks{padding:2px 8px 10px}
 .ytask{display:flex;align-items:flex-start;gap:9px;padding:6px 7px;border-radius:9px;margin:2px 0}
 .ytask.pending{background:rgba(224,153,61,.1);outline:1.5px dashed var(--moved);outline-offset:-1px}
-.card.mine .ytask.pending{cursor:pointer}
+.card.mine .ytask{cursor:pointer}
+.card.mine .ytask:hover{background:var(--panel2)}
+.card.mine .ytask.pending:hover{background:rgba(224,153,61,.16)}
 .st-pending{background:var(--panel);border-color:var(--moved);color:var(--moved);border-style:dashed}
 .ytext{flex:1;font-size:13px;padding-top:2px}
 .ytask.done .ytext{text-decoration:line-through;color:var(--txt3)}
@@ -526,7 +528,7 @@ function yTaskHTML(t, yIso, editable){
   const note = t.note ? `<div class="ynote">${esc(t.note)}</div>` : '';
   const cue = (editable && open) ? `<div class="ycue">отметить →</div>` : '';
   return `<div class="ytask ${t.st}${open?' pending':''}" data-ytask="${t.id}" data-yiso="${yIso}">
-    <div class="st st-${open?'pending':t.st}"${editable?' data-yst':''} title="${editable?'клик — статус и комментарий':ST_LABEL[t.st]}">${open?'?':ST_ICON[t.st]}</div>
+    <div class="st st-${open?'pending':t.st}" title="${editable?'клик — статус и комментарий':ST_LABEL[t.st]}">${open?'?':ST_ICON[t.st]}</div>
     <div class="ytext">${esc(t.text)}${note}</div>
     ${cue}
   </div>`;
@@ -597,7 +599,7 @@ function wireCards(iso){
       const yIso = tr.dataset.yiso;
       const yp = dayOf(yIso).people[name];
       const t = (yp.tasks||[]).find(x=>x.id===tr.dataset.ytask); if(!t) return;
-      const yst = tr.querySelector('[data-yst]'); if(yst) yst.onclick=()=>{ openTaskEditor(yIso, t, yst); };
+      tr.onclick=()=>{ openTaskEditor(yIso, t, tr); };
     });
     // add tasks
     const ta = card.querySelector('[data-add]');
