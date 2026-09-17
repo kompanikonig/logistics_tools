@@ -11,7 +11,7 @@ CSS/JS inline and zero external JS dependencies (only Google Fonts are pulled in
 `<link>`).
 
 - `index.html` — landing page listing the available tools (a simple card grid).
-- `dashboard-v2/index.html` — resource-loading dashboard ("Логистика 2026"), Supabase-backed CRUD
+- `planning/index.html` — resource-loading dashboard ("Логистика 2026"), Supabase-backed CRUD
   rewrite of the original CSV-based dashboard (which has been retired — see below). KPIs, monthly
   heatmap, free-capacity / needs-resource panels, a merged project/executor timeline with
   drill-down modals, project/assignment CRUD, Jira status-report sync, and a business-analyst
@@ -19,13 +19,13 @@ CSS/JS inline and zero external JS dependencies (only Google Fonts are pulled in
 - `standup/index.html` — daily team standup board with per-person task lists, day status
   (work/vacation/sick), a weekly progress panel, a manager summary view, and a day archive.
 - `kanban/index.html` — Supabase-backed kanban board for team tasks (Новая/В работе/Трудности/
-  Выполнено), drag-and-drop, due dates, comments. Password-gated like `dashboard-v2` (SHA-256),
+  Выполнено), drag-and-drop, due dates, comments. Password-gated like `planning` (SHA-256),
   with two role passwords (admin: full CRUD, viewer: read-only) — see its architecture notes below.
 - `shared.js` — small set of dependency-free helpers shared by the tools above (see below).
 
 ## Working locally
 
-There's nothing to install or build. Just open the files. `dashboard-v2/index.html` and
+There's nothing to install or build. Just open the files. `planning/index.html` and
 `kanban/index.html` talk to Supabase over HTTPS (works fine under `file://`), but it's still
 convenient to serve the repo root locally for relative links between tools, e.g.:
 
@@ -42,7 +42,7 @@ workflow, no `gh-pages` branch).
 
 A top-level `shared.js`, included via `<script src="../shared.js">` in each tool (after the
 Supabase/SheetJS CDN tags, before the tool's own inline `<script>`). Holds dependency-free pure
-helpers duplicated across tools: `sha256()` (used by `dashboard-v2` and `kanban`'s SHA-256
+helpers duplicated across tools: `sha256()` (used by `planning` and `kanban`'s SHA-256
 password gate), `esc()`/`escAttr()` (HTML escaping), `initials()`. Deliberately does **not**
 hold CSS variables or theme-toggle logic — each tool's `:root` color palette and theme mechanism
 are intentionally different (different brand colors, different persistence keys), not
@@ -53,7 +53,7 @@ duplication to remove.
 - The team roster is hardcoded in `PEOPLE`, plus a special pseudo-user `MANAGER` ("Руководитель")
   that switches the UI into a read-only team-summary view instead of an editable card. "Who am I"
   is a `<select>` persisted to `localStorage` (`standup_me`); page access itself is gated by a
-  real Supabase Auth login (`sb.auth.signInWithPassword`), unlike `dashboard-v2`/`kanban`'s
+  real Supabase Auth login (`sb.auth.signInWithPassword`), unlike `planning`/`kanban`'s
   static SHA-256 password scheme.
 - Storage is abstracted behind `apiGetAll()`/`apiSave()` via `backend()`: if `CONFIG.url` is set,
   both read/write go through a Google Apps Script Web App (acting as a proxy/DB on top of a
@@ -79,7 +79,7 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
 ## Планы: переход дашборда на Supabase
 
 Старый CSV-вьювер (`dashboard/index.html`, снимок `DATA` + live CSV из Google Sheets) был
-заменён на `dashboard-v2/index.html` (Supabase, CRUD) и удалён из репозитория — он больше не
+заменён на `planning/index.html` (Supabase, CRUD) и удалён из репозитория — он больше не
 используется и не поддерживается.
 
 **Архитектурные решения (зафиксированы):**
@@ -103,7 +103,7 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
 запросы к Supabase, а не переписывается с нуля.
 
 **Дорожная карта:**
-1. ✅ Редизайн визуала (dashboard-v2: таймлайн, drill-модалка, периоды исполнителей)
+1. ✅ Редизайн визуала (planning: таймлайн, drill-модалка, периоды исполнителей)
 2. ✅ Схема Supabase: таблицы projects / assignments / resources, пароль через SHA-256
 3. ✅ Подключение Supabase: чтение через anon-ключ, авторизация без Supabase Auth
 4. ✅ CRUD: проекты (создание/редактирование/удаление), назначения, несколько периодов, CAB-ссылки
@@ -135,17 +135,17 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
 (см. обсуждение плюсов/минусов текущего стека и вариантов A/B/C). Конкретные задачи:
 
 1. ✅ **Роли и права через Supabase Auth + RLS** (главный пункт, пункт 6 выше) — только
-   `dashboard-v2` (projects/assignments/resources); `kanban` и `standup` не трогали, у них свои
+   `planning` (projects/assignments/resources); `kanban` и `standup` не трогали, у них свои
    рабочие схемы доступа:
    - `profiles` (id, email, full_name, role: admin/pm/lead) — см. `supabase/migration_roles.sql`
    - Заведены реальные пользователи в Supabase Auth (РП — pm, тимлиды — lead, Компаниченко —
-     admin); общий аккаунт `kvladislav2703@gmail.com` больше не нужен для входа в dashboard-v2
+     admin); общий аккаунт `kvladislav2703@gmail.com` больше не нужен для входа в planning
    - RLS на `projects` (admin: всё; pm/lead: только просмотр), `assignments` (admin+pm: всё;
      lead: просмотр), `resources` (admin: всё; pm: просмотр+создание нового исполнителя;
      lead: просмотр) — через `public.current_role()`
    - Менеджер (`manager`) проекта остался свободным текстом, не привязан к аккаунту; исполнители
      (`resources`) не входят в систему как пользователи — оба вопроса ниже закрыты этим решением
-   - Логин dashboard-v2 переведён с общего SHA-256-пароля на персональные email+пароль
+   - Логин planning переведён с общего SHA-256-пароля на персональные email+пароль
      (Supabase Auth, как в `standup`); смена пароля — через «Забыли пароль?» (recovery-ссылка на
      почту, без участия админа)
    - ✅ **Anon-доступ к `projects`/`assignments`/`resources` закрыт** (2026-06-28) — проверено:
@@ -156,14 +156,14 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
      (`auth_full_days`/`auth_full_tasks`), это не менялось
    - ⬜ **`kanban` всё ещё полностью открыт anon-ключом** (`kanban_cards`/`kanban_comments`) —
      там нет Supabase Auth вообще, только SHA-256-пароль на уровне UI, который не защищает от
-     прямого запроса к API. Закрыть тем же способом, что и dashboard-v2 (Auth + роли) — отдельная
+     прямого запроса к API. Закрыть тем же способом, что и planning (Auth + роли) — отдельная
      задача, отложена сознательно, чтобы не сломать инструмент без замены механизма входа
 2. ✅ **Зафиксировать RLS-политики в git** — `supabase/policies.sql`, актуальный снимок политик по
    всем 9 таблицам (включая `profiles`/`activity_log`); переналожить одной командой:
    `npx supabase db query --linked -f supabase/policies.sql` (требует, чтобы перед этим хоть раз
    был применён `supabase/migration_roles.sql` — оттуда берётся функция `current_role()`)
 3. ✅ **Вынести повторяющийся код** — `sha256()`, `esc()`/`escAttr()`, `initials()` вынесены в
-   общий `shared.js` (см. раздел выше), подключаемый через `<script src>` в `dashboard-v2`,
+   общий `shared.js` (см. раздел выше), подключаемый через `<script src>` в `planning`,
    `standup`, `kanban`. CSS-переменные и тема/dark-mode оставлены как есть — у каждого
    инструмента свой фирменный цвет и механизм переключения, это не дубликат, а разный дизайн
 
@@ -184,13 +184,13 @@ commented-out template block there for exactly this (look for `ШАБЛОН дл
 3. ⬜ **Журнал действий (`activity_log`) подделываем** — `actor_email`/`actor_name`/`actor_role`
    пишутся с клиента (`myProfile` в браузере), без проверки на сервере через `auth.uid()`/
    `auth.jwt()`; admin/pm может вписать в лог чужое имя
-4. ✅ **XSS в dashboard-v2** (2026-06-29) — название проекта/имя исполнителя/имя РП вставлялись
+4. ✅ **XSS в planning** (2026-06-29) — название проекта/имя исполнителя/имя РП вставлялись
    в HTML без `esc()`/`escAttr()` в ~15 местах (вкладка «Дашборд», вся «Детализация» включая
    title-атрибуты, drill-модалка, формы назначений, панели «Без назначения»/«Нужен ресурс»,
    обе тепловые карты). Проверено инъекцией `<img onerror>`/атрибут-разрыва через наведение —
    нигде не выполняется. `status_report` (сырой HTML из Jira) теперь дополнительно санитизируется
    в `sync-from-jira` на входе данных (вырезаются `<script>`/`<iframe>`/`on*=`/`javascript:`)
-5. ⬜ **«Сырые» ошибки в `alert()`** — 9 мест в dashboard-v2, 3 в kanban показывают пользователю
+5. ⬜ **«Сырые» ошибки в `alert()`** — 9 мест в planning, 3 в kanban показывают пользователю
    текст ошибки Postgres/PostgREST напрямую вместо нейтрального сообщения
 6. ⬜ Мелочи: выключить самостоятельную регистрацию в Supabase Auth (`disable_signup`), сузить
    `profiles` SELECT для не-admin ролей
