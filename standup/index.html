@@ -490,7 +490,7 @@ function cardHTML(name, pdata, iso, editable){
         : (pdata.note?`<div class="dsnote">${esc(pdata.note)}</div>`:''))
     : '';
   const done = tasks.filter(t=>t.st==='done').length;
-  const yesterdayHTML = (iso===isoToday()) ? yesterdayBlockHTML(name, iso, editable) : '';
+  const yesterdayHTML = yesterdayBlockHTML(name, iso, editable);
   const addHTML = editable ? `
     <div class="addrow">
       <textarea data-add placeholder="+ задача (Enter — добавить, по строке на задачу)"></textarea>
