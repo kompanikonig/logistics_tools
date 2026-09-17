@@ -429,8 +429,8 @@ async function loadAll(){
     toast('Не удалось загрузить данные команды');
   }
 }
-async function saveDay(iso){
-  const rec = recordFor(iso, me);
+async function saveDay(iso, person){
+  const rec = recordFor(iso, person||me);
   saving++; setSync('busy');
   try{
     await apiSave(rec);
@@ -477,7 +477,7 @@ function renderBoard(){
   document.getElementById('curDow').textContent = dowOf(cur);
   const dp = document.getElementById('datePick'); if(dp) dp.value = cur;
   const board = document.getElementById('board');
-  board.innerHTML = PEOPLE.map(name=>cardHTML(name, day.people[name], cur, name===me)).join('');
+  board.innerHTML = PEOPLE.map(name=>cardHTML(name, day.people[name], cur, name===me || isManager())).join('');
   wireCards(cur);
 }
 function cardHTML(name, pdata, iso, editable){
@@ -543,7 +543,7 @@ function taskHTML(t, editable){
 }
 // ---------- всплывашка: статус + комментарий ----------
 let _pop = null;
-function openTaskEditor(iso, t, anchorEl){
+function openTaskEditor(iso, t, anchorEl, person){
   if(_pop){ _pop.back.remove(); _pop=null; }
   const back = document.createElement('div'); back.className='stpop-back';
   const pop = document.createElement('div'); pop.className='stpop';
@@ -552,7 +552,7 @@ function openTaskEditor(iso, t, anchorEl){
     <textarea data-pnote placeholder="комментарий: почему висит / причина блокера…">${esc(t.note||'')}</textarea>
     <div class="pf"><span class="hint">сохранится при «Готово»</span><button class="done-btn" data-pdone>Готово</button></div>`;
   back.appendChild(pop); document.body.appendChild(back);
-  _pop = {iso, t, back};
+  _pop = {iso, t, back, person: person||me};
   // позиционирование рядом с иконкой
   const r = anchorEl.getBoundingClientRect();
   const pw = 240, ph = pop.offsetHeight || 170;
@@ -572,11 +572,11 @@ function openTaskEditor(iso, t, anchorEl){
 function escClose(e){ if(e.key==='Escape') commitEditor(); }
 function commitEditor(){
   if(!_pop) return;
-  const {iso, t, back} = _pop;
+  const {iso, t, back, person} = _pop;
   if(t.note!=null){ t.note = String(t.note).trim(); if(!t.note) delete t.note; }
   document.removeEventListener('keydown', escClose);
   back.remove(); _pop=null;
-  saveDay(iso).then(()=>renderAll());
+  saveDay(iso, person).then(()=>renderAll());
 }
 function wireCards(iso){
   const day = dayOf(iso);
@@ -584,29 +584,29 @@ function wireCards(iso){
     const name = card.dataset.card;
     const p = day.people[name];
     // day status cycle
-    card.querySelector('[data-ds]').onclick=()=>{ p.status = DS[(DS.indexOf(p.status)+1)%DS.length]; saveDay(iso).then(()=>renderAll()); };
+    card.querySelector('[data-ds]').onclick=()=>{ p.status = DS[(DS.indexOf(p.status)+1)%DS.length]; saveDay(iso, name).then(()=>renderAll()); };
     // note
     const noteEl = card.querySelector('[data-note]');
-    if(noteEl) noteEl.onchange=()=>{ p.note=noteEl.value.trim(); saveDay(iso); };
+    if(noteEl) noteEl.onchange=()=>{ p.note=noteEl.value.trim(); saveDay(iso, name); };
     // task status + delete
     card.querySelectorAll('.task').forEach(tr=>{
       const t = p.tasks.find(x=>x.id===tr.dataset.task); if(!t) return;
-      const st = tr.querySelector('[data-st]'); if(st) st.onclick=(e)=>{ openTaskEditor(iso, t, st); };
-      const del = tr.querySelector('[data-del]'); if(del) del.onclick=()=>{ p.tasks=p.tasks.filter(x=>x.id!==t.id); saveDay(iso).then(()=>renderAll()); };
+      const st = tr.querySelector('[data-st]'); if(st) st.onclick=(e)=>{ openTaskEditor(iso, t, st, name); };
+      const del = tr.querySelector('[data-del]'); if(del) del.onclick=()=>{ p.tasks=p.tasks.filter(x=>x.id!==t.id); saveDay(iso, name).then(()=>renderAll()); };
     });
     // yesterday recap: status click reopens the same editor, saved against yesterday's date
     card.querySelectorAll('.ytask').forEach(tr=>{
       const yIso = tr.dataset.yiso;
       const yp = dayOf(yIso).people[name];
       const t = (yp.tasks||[]).find(x=>x.id===tr.dataset.ytask); if(!t) return;
-      tr.onclick=()=>{ openTaskEditor(yIso, t, tr); };
+      tr.onclick=()=>{ openTaskEditor(yIso, t, tr, name); };
     });
     // add tasks
     const ta = card.querySelector('[data-add]');
     if(ta) ta.onkeydown=(e)=>{
       if(e.key==='Enter' && !e.shiftKey){ e.preventDefault();
         const lines = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
-        if(lines.length){ lines.forEach(line=>p.tasks.push({id:uid(),text:line,st:'wip'})); ta.value=''; saveDay(iso).then(()=>renderAll()); }
+        if(lines.length){ lines.forEach(line=>p.tasks.push({id:uid(),text:line,st:'wip'})); ta.value=''; saveDay(iso, name).then(()=>renderAll()); }
       }
     };
   });
@@ -631,10 +631,11 @@ function renderArchive(){
     const open = archiveOpen[iso];
     const bodies = PEOPLE.map(name=>{
       const p=day.people[name]; const tasks=p.tasks||[];
+      const editableMini = name===me || isManager();
       if(!tasks.length && (p.status==='work')) return '';
       const ds = (p.status&&p.status!=='work')?`<span class="daystatus ds-${p.status}">${DS_LABEL[p.status]}${p.note?': '+esc(p.note):''}</span>`:'';
-      const tlist = tasks.length? tasks.map(t=>taskHTML(t, name===me)).join('') : '<div class="empty-card">—</div>';
-      return `<div class="mini${name===me?' mine':''}" data-mini="${esc(name)}"><h4>${esc(name)} ${ds}</h4>${tlist}</div>`;
+      const tlist = tasks.length? tasks.map(t=>taskHTML(t, editableMini)).join('') : '<div class="empty-card">—</div>';
+      return `<div class="mini${editableMini?' mine':''}" data-mini="${esc(name)}"><h4>${esc(name)} ${ds}</h4>${tlist}</div>`;
     }).join('');
     return `<div class="arch-day${open?' open':''}" data-arch="${iso}">
       <div class="arch-head" data-archhead><span class="car">▶</span>
@@ -652,7 +653,7 @@ function renderArchive(){
       const name=mini.dataset.mini, p=dayOf(iso).people[name];
       mini.querySelectorAll('.task').forEach(tr=>{
         const t=p.tasks.find(x=>x.id===tr.dataset.task); if(!t) return;
-        const st=tr.querySelector('[data-st]'); if(st) st.onclick=()=>{ openTaskEditor(iso, t, st); };
+        const st=tr.querySelector('[data-st]'); if(st) st.onclick=()=>{ openTaskEditor(iso, t, st, name); };
       });
     });
   });
