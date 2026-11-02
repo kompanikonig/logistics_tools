@@ -249,14 +249,16 @@ body.dark .section-h.toggle:hover{color:var(--accent)}
 </head>
 <body>
 <div id="loginOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;">
-  <div style="background:var(--panel);border-radius:16px;padding:40px 36px;width:320px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:16px;">
+  <form id="loginForm" style="background:var(--panel);border-radius:16px;padding:40px 36px;width:320px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:16px;">
     <h2 style="margin:0;font-size:1.2rem;color:var(--txt);">Стендап команды</h2>
     <p style="margin:0;font-size:.85rem;color:var(--txt2);">Введите пароль для входа</p>
-    <input id="loginPass" type="password" placeholder="Пароль" autocomplete="current-password"
+    <!-- менеджер паролей сохраняет пароль стендапа под этим логином, отдельно от личных логинов панели планирования на том же сайте -->
+    <input id="loginUser" type="text" name="username" autocomplete="username" readonly hidden>
+    <input id="loginPass" type="password" name="password" placeholder="Пароль" autocomplete="current-password"
       style="padding:10px 14px;border:1px solid var(--line2);border-radius:8px;font-size:1rem;background:var(--panel2);color:var(--txt);outline:none;">
-    <button id="loginBtn" style="padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:600;">Войти</button>
+    <button id="loginBtn" type="submit" style="padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:600;">Войти</button>
     <p id="loginErr" style="margin:0;font-size:.82rem;color:var(--fail);min-height:1em;"></p>
-  </div>
+  </form>
 </div>
 <div id="appWrap" style="display:none;">
 <div class="wrap">
@@ -312,7 +314,8 @@ body.dark .section-h.toggle:hover{color:var(--accent)}
 const SUPABASE_URL  = 'https://esszpbcsdvdgtqauuqku.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzc3pwYmNzZHZkZ3RxYXV1cWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzUwNTgsImV4cCI6MjA5NzM1MTA1OH0.q5Jskq9Vi8IpaR1APhJIIHN2j6I2kpKhBu9MyKwAx6A';
 const LOGIN_EMAIL   = 'kvladislav2703@gmail.com';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// свой storageKey: на общем домене и проекте Supabase вход/выход в панели планирования ломал сессию стендапа
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storageKey: 'sb-standup-auth' } });
 const POLL_MS = 25000;
 
 const PEOPLE = ['Сергей Веревкин','Павел Шакиров','Олег Саушкин','Илья Троян','Светлана Климова','Валентина Куренная','Мария Петрова','Дмитрий Хроменков'];
@@ -909,8 +912,8 @@ function showLogin(){
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session) showApp(); else showLogin();
-  document.getElementById('loginBtn').onclick=doLogin;
-  document.getElementById('loginPass').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+  document.getElementById('loginUser').value=LOGIN_EMAIL;
+  document.getElementById('loginForm').onsubmit=e=>{ e.preventDefault(); doLogin(); };
 })();
 </script>
 </body>

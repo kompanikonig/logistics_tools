@@ -51,10 +51,14 @@ duplication to remove.
 ## `standup/index.html` architecture
 
 - The team roster is hardcoded in `PEOPLE`, plus a special pseudo-user `MANAGER` ("Руководитель")
-  that switches the UI into a read-only team-summary view instead of an editable card. "Who am I"
-  is a `<select>` persisted to `localStorage` (`standup_me`); page access itself is gated by a
-  real Supabase Auth login (`sb.auth.signInWithPassword`), unlike `planning`/`kanban`'s
-  static SHA-256 password scheme.
+  that shows a team-summary panel and makes every card editable (saves go under the card owner's
+  name via the explicit `person` arg of `saveDay`/`openTaskEditor`). "Who am I" is a `<select>`
+  persisted to `localStorage` (`standup_me`); page access itself is gated by a Supabase Auth login
+  into one shared account (`LOGIN_EMAIL`, password-only form). The client uses its own
+  `storageKey` (`sb-standup-auth`): standup and `planning` share the GitHub Pages origin and the
+  Supabase project, and with the default key logging in/out of one tool clobbered the other's
+  session. The hidden `username` field keeps browser password managers from mixing up the shared
+  standup password with personal `planning` logins.
 - Storage is abstracted behind `apiGetAll()`/`apiSave()` via `backend()`: if `CONFIG.url` is set,
   both read/write go through a Google Apps Script Web App (acting as a proxy/DB on top of a
   Google Sheet); if empty, it falls back to per-browser `localStorage` only (single device, not
